@@ -73,13 +73,19 @@ private:
 // TODO: wrap biz logic into a functor
 
 class Routine {
-	typedef void (*func_t)();
 
 public:
+
+	typedef void (*Delegate)();
+
 	enum class State {Created, Running, Suspend, Dead};
 
 	Routine():_state(State::Created) {}
-	Routine(func_t logic):_logic(std::move(logic)), _state(State::Created) {}
+	Routine(Delegate logic):_logic(std::move(logic)), _state(State::Created) {}
+	~Routine() {
+		_state = State::Dead;
+		// TODO: delete all sub routines: stack rewinding
+	}
 
 	bool PrepareContextForFirstResume(void (*start_point)(), Routine &parent) {
 		if (!_context.MakeContext(start_point, parent._context)) {
@@ -99,17 +105,12 @@ public:
 	State GetState() { return _state; }
 	void SetState(State state) { _state = state; }
 
-	// TODO: logic for first entering
-	static void FirstResume() {
-
-	}
-
 private:
 
 	
 
 private:
-	func_t _logic;
+	Delegate _logic;
 	State _state;
 	Context _context;
 };
@@ -134,19 +135,6 @@ private:
 	static thread_local Routine *tls_cur_routine;
 };
 
-
-
-static bool YieldTo(Routine &other) {
-	auto cur_routine = Env::GetCurRoutine();
-	if (other.GetState() == Routine::State::Created) {
-		if (!other.PrepareContextForFirstResume(nullptr, *cur_routine)) {
-			return false;
-		}
-	}
-	if (cur_routine == &other) {
-		return true;
-	}
-	return Env::GetCurRoutine()->Jump(other);
-}
+bool yield_to(Routine &other);
 
 }
