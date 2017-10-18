@@ -90,6 +90,9 @@ public:
 	}
 
 	bool PrepareContextForFirstResume(void (*start_point)(), Routine &parent) {
+		if (State::Created != _state) {
+			return false;
+		}
 		if (!_context.MakeContext(start_point, parent._context)) {
 			return false;
 		}
@@ -98,6 +101,9 @@ public:
 	}
 
 	bool Jump(Routine &other) {
+		if (other.GetState() != State::Suspend) {
+			return false;
+		}
 		_state = State::Suspend;
 		auto success = _context.SwapContext(other._context);
 		_state = State::Running;
