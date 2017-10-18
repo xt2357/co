@@ -26,6 +26,7 @@ def link(objects, output_filename):
     for obj in objects:
         cmd += obj + ' '
     cmd += '-o %s'%output_filename
+    cmd += ' -lstdc++ -std=c++11'
     print('[LINK]-> %s: %s'%(' '.join(objects), cmd))
     call(cmd)
 
