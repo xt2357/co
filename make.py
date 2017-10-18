@@ -29,6 +29,12 @@ def link(objects, output_filename):
     print('[LINK]-> %s: %s'%(' '.join(objects), cmd))
     call(cmd)
 
+def lib_static(objects, output_filename):
+    cmd = 'ar rcs %s '%output_filename
+    for obj in objects:
+        cmd += obj + ' '
+    print('[LIB_STATIC]-> %s: %s'%(' '.join(objects), cmd))
+    call(cmd)
 
 def make_debug():
     objs = []
@@ -36,10 +42,18 @@ def make_debug():
         for f in [i for i in files if i.endswith('.cpp')]:
             objs.append(compile(os.path.join(root, f), 'objects'))
     link(objs, 'a.out')
+
+def make_static():
+    objs = []
+    for root, dirs, files in os.walk('src'):
+        for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
+            objs.append(compile(os.path.join(root, f), 'objects'))
+    lib_static(objs, 'libco.a')
     
 def make_clean():
-    call('rm objects/*.o', print_cmd=True)
-    call('rm *.out', print_cmd=True)
+    call('rm -f objects/*.o', print_cmd=True)
+    call('rm -f *.out', print_cmd=True)
+    call('rm -f *.a', print_cmd=True)
 
 
 if __name__=='__main__':
@@ -48,4 +62,6 @@ if __name__=='__main__':
         sys.exit(0)
     if 'clean' == sys.argv[1]:
         make_clean()
+    elif 'static' == sys.argv[1]:
+        make_static()
 
