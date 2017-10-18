@@ -74,6 +74,8 @@ private:
 
 class Routine {
 
+friend void first_resume();
+
 public:
 
 	typedef void (*Delegate)();
