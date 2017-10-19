@@ -51,5 +51,6 @@ int main()
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);
     co::yield_to(r1);
+    cout << "returned to main" << endl;
     return 0;
 }

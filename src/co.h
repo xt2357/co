@@ -25,9 +25,13 @@ SOFTWARE.
 #include <ucontext.h>
 #include <stdlib.h>
 
+#include <cassert>
+
 #include <utility>
 #include <unordered_set>
 #include <functional>
+
+#include <iostream>
 
 namespace co {
 
@@ -74,7 +78,6 @@ private:
 class Routine;
 void set_running_routine(Routine *routine);
 
-// TODO: wrap biz logic into a functor
 class Routine {
 
 friend void routine_entry();
@@ -93,10 +96,17 @@ public:
     Routine():_logic([](){}), _state(State::Created) {}
     Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) {}
     ~Routine() {
+        // std::cout << "destructor: " << this << std::endl;
         _state = State::Dead;
-        // TODO: delete all sub routines: stack rewinding
+        for (auto r : _sub_routines) {
+            RecursiveMarkDead(r);
+            r->_parent = nullptr;
+        }
+        if (_parent) {
+            assert(_parent->RemoveSubRoutine(this));
+        }
     }
-
+    //TODO: rvalue reference?
     bool SetBehavior(Delegate&& logic) {
         if (State::Created != _state) {
             return false;
@@ -109,14 +119,21 @@ public:
 
 private:
 
+    static void RecursiveMarkDead(Routine *r) {
+        for (auto sub : r->_sub_routines) {
+            RecursiveMarkDead(sub);
+        }
+        r->SetState(State::Dead);
+    }
+
     void SetState(State state) { _state = state; }
 
     bool AttachSubRoutine(Routine *sub_routine) {
-        if (_sub_routines.find(sub_routine) != _sub_routines.end()) {
-            return false;
-        }
-        _sub_routines.insert(sub_routine);
-        return true;
+        return _sub_routines.insert(sub_routine).second;
+    }
+
+    bool RemoveSubRoutine(Routine *sub_routine) {
+        return _sub_routines.erase(sub_routine);
     }
 
     bool PrepareContextForFirstResume(void (*start_point)(), Routine &parent) {
