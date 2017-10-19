@@ -29,19 +29,18 @@ void set_running_routine(Routine *routine) {
 
 void routine_entry() {
     auto r = get_running_routine();
-    // TODO: what if when _logic throws?
-    r->_logic();
-    r->SetState(Routine::State::Dead);
-    // make all sub_routines dead
-    // std::cout << r << std::endl;
-    // std::cout << "r->_sub_routines size: " << r->_sub_routines.size() << std::endl;
-    // for (auto sub : r->_sub_routines) {
-    //     std::cout << sub << std::endl;
-    // }
-    for (auto sub : r->_sub_routines) {
-        Routine::RecursiveMarkDead(sub);
+    // what if when _logic throws? do some context switching and rethrow it
+    try {
+        r->_logic();
     }
-    set_running_routine(r->_parent);
+    catch (...) {
+        r->SetState(Routine::State::Dead);
+        for (auto sub : r->_sub_routines) {
+            Routine::RecursiveMarkDead(sub);
+        }
+        set_running_routine(r->_parent);
+        throw;
+    }
 }
 
 bool yield_to(Routine &other) {
