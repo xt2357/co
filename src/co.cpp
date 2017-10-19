@@ -27,6 +27,8 @@ void routine_entry() {
     auto r = get_running_routine();
     r->_logic();
     r->SetState(Routine::State::Dead);
+    // destroy all sub_routines
+    
 }
 
 bool yield_to(Routine &other) {

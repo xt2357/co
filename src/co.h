@@ -96,7 +96,7 @@ public:
         // TODO: delete all sub routines: stack rewinding
     }
 
-    void SetLogic(Delegate&& logic) {
+    void SetBehavior(Delegate&& logic) {
         _logic = std::move(logic);
     }
 

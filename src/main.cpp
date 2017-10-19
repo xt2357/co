@@ -48,8 +48,8 @@ int main()
     //     co::yield_to(r1);
     //     cout << "f2: 2" << endl;
     // };
-    // r1.SetLogic(g_f1);
-    r2.SetLogic(g_f2);
+    r1.SetBehavior(g_f1);
+    r2.SetBehavior(g_f2);
     co::yield_to(r1);
     return 0;
 }
