@@ -77,7 +77,7 @@ void set_running_routine(Routine *routine);
 // TODO: wrap biz logic into a functor
 class Routine {
 
-friend void first_resume();
+friend void routine_entry();
 friend bool yield_to(Routine &);
 
 public:
@@ -89,7 +89,7 @@ public:
 
     enum class State {Created, Running, Suspend, Dead};
 
-    Routine():_state(State::Created) {}
+    Routine():_logic([](){}), _state(State::Created) {}
     Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) {}
     ~Routine() {
         _state = State::Dead;
