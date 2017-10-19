@@ -102,6 +102,7 @@ public:
             RecursiveMarkDead(r);
             r->_parent = nullptr;
         }
+        _sub_routines.clear();
         if (_parent) {
             assert(_parent->RemoveSubRoutine(this));
         }

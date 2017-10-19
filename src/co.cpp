@@ -34,7 +34,9 @@ void routine_entry() {
 		r->SetState(Routine::State::Dead);
         for (auto sub : r->_sub_routines) {
             Routine::RecursiveMarkDead(sub);
+            sub->_parent = nullptr;
         }
+        r->_sub_routines.clear();
         set_running_routine(r->_parent);
 	});
     // what if when _logic throws? do some context switching and rethrow it
