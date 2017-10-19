@@ -33,7 +33,7 @@ void routine_entry() {
     std::unique_ptr always_do(nullptr, [&r](){
 		r->SetState(Routine::State::Dead);
         for (auto sub : r->_sub_routines) {
-            Routine::RecursiveMarkDead(sub);
+            Routine::RecursiveUnwindAndMarkDead(sub);
             sub->_parent = nullptr;
         }
         r->_sub_routines.clear();

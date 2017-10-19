@@ -99,15 +99,14 @@ public:
         // std::cout << "destructor: " << this << std::endl;
         _state = State::Dead;
         for (auto r : _sub_routines) {
-            RecursiveMarkDead(r);
+            RecursiveUnwindAndMarkDead(r);
             r->_parent = nullptr;
         }
-        _sub_routines.clear();
         if (_parent) {
             assert(_parent->RemoveSubRoutine(this));
         }
     }
-    //TODO: rvalue reference?
+    //rvalue reference? yes it is designed the only way to pass a functor in 
     bool SetBehavior(Delegate&& logic) {
         if (State::Created != _state) {
             return false;
@@ -120,10 +119,11 @@ public:
 
 private:
 
-    static void RecursiveMarkDead(Routine *r) {
+    static void RecursiveUnwindAndMarkDead(Routine *r) {
         for (auto sub : r->_sub_routines) {
-            RecursiveMarkDead(sub);
+            RecursiveUnwindAndMarkDead(sub);
         }
+        // TODO: unwind the coroutine stack of r
         r->SetState(State::Dead);
     }
 
