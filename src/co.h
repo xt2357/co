@@ -78,6 +78,7 @@ void set_running_routine(Routine *routine);
 class Routine {
 
 friend void routine_entry();
+friend Routine *get_running_routine();
 friend bool yield_to(Routine &);
 
 public:
@@ -96,15 +97,19 @@ public:
         // TODO: delete all sub routines: stack rewinding
     }
 
-    void SetBehavior(Delegate&& logic) {
+    bool SetBehavior(Delegate&& logic) {
+        if (State::Created != _state) {
+            return false;
+        }
         _logic = std::move(logic);
+        return true;
     }
 
     State GetState() { return _state; }
-    void SetState(State state) { _state = state; }
-
 
 private:
+
+    void SetState(State state) { _state = state; }
 
     bool AttachSubRoutine(Routine *sub_routine) {
         if (_sub_routines.find(sub_routine) != _sub_routines.end()) {
