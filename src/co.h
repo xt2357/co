@@ -120,10 +120,15 @@ public:
 private:
 
     static void RecursiveUnwindAndMarkDead(Routine *r) {
+    	if (r->GetState() == Routine::State::Dead) {
+    		return;
+    	}
         for (auto sub : r->_sub_routines) {
             RecursiveUnwindAndMarkDead(sub);
         }
-        // TODO: unwind the coroutine stack of r
+        if (r->GetState() != Routine::State::Created) {
+        	// TODO: unwind the coroutine stack of r whose state is suspend or running
+        }
         r->SetState(State::Dead);
     }
 
