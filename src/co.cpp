@@ -1,6 +1,7 @@
 #include "co.h"
 #include <cassert>
 
+#include <memory>
 #include <iostream>
 
 namespace co {
@@ -29,16 +30,18 @@ void set_running_routine(Routine *routine) {
 
 void routine_entry() {
     auto r = get_running_routine();
+    std::unique_ptr always_do(nullptr, [&r](){
+		r->SetState(Routine::State::Dead);
+        for (auto sub : r->_sub_routines) {
+            Routine::RecursiveMarkDead(sub);
+        }
+        set_running_routine(r->_parent);
+	});
     // what if when _logic throws? do some context switching and rethrow it
     try {
         r->_logic();
     }
     catch (...) {
-        r->SetState(Routine::State::Dead);
-        for (auto sub : r->_sub_routines) {
-            Routine::RecursiveMarkDead(sub);
-        }
-        set_running_routine(r->_parent);
         throw;
     }
 }
