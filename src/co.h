@@ -147,7 +147,7 @@ private:
     State _state;
     Context _context;
     std::unordered_set<Routine*> _sub_routines;
-    Routine *_parent;
+    Routine *_parent = nullptr;
 };
 
 
