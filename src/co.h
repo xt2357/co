@@ -76,12 +76,12 @@ private:
 };
 
 class Routine;
-void set_running_routine(Routine *routine);
+void set_running_routine(Routine &routine);
 
 class Routine {
 
 friend void routine_entry();
-friend Routine *get_running_routine();
+friend Routine &get_running_routine();
 friend bool yield_to(Routine &);
 
 public:
@@ -156,10 +156,10 @@ private:
             return false;
         }
         _state = State::Suspend;
-        set_running_routine(&other);
+        set_running_routine(other);
         auto success = _context.SwapContext(other._context);
         if (!success) {
-            set_running_routine(this);
+            set_running_routine(*this);
         }
         _state = State::Running;
         return success;
@@ -175,5 +175,5 @@ private:
 
 
 bool yield_to(Routine &other);
-
+Routine &get_main_routine();
 }
