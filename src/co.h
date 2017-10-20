@@ -149,10 +149,10 @@ private:
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
         if (r.GetState() != Routine::State::Created && r != get_main_routine()) {
-        	// TODO: unwind the coroutine stack of r whose state is suspend
+        	// unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
-            get_running_routine()._context.SwapContext(r._context);
+            assert(get_running_routine()._context.SwapContext(r._context));
         }
         r.SetState(State::Dead);
     }

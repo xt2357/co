@@ -32,7 +32,12 @@ void g_f1() {
     cout << "r1:" << int(r1.GetState()) << endl;
     cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f1: 1" << endl;
-    co::yield_to(r2);
+    try {
+        co::yield_to(r2);
+    }
+    catch(...) {
+        cout << "catched!" << endl;
+    }
     gaoshi();
     cout << "f1: 2" << endl;
     co::yield_to(r2);
@@ -44,6 +49,7 @@ void g_f2() {
     cout << "r1:" << int(r1.GetState()) << endl;
     cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f2: 1" << endl;
+    throw 10;
     co::yield_to(r1);
     cout << "f2: 2" << endl;
     co::Routine sub {[](){cout<<"sub"<<endl;}};

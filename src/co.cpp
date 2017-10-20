@@ -51,11 +51,12 @@ void routine_entry() {
     try {
         r._logic();
     }
-    // unwind this coroutine
+    // unwind this coroutine done
     catch (ForceUnwindingException &e) {
-        e._routine_to_unwind._context.SwapContext(get_running_routine()._context);
+        assert(e._routine_to_unwind._context.SwapContext(get_running_routine()._context));
     }
     catch (...) {
+        // TODO: deliver the excetion to upper routine
         throw;
     }
 }
