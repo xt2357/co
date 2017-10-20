@@ -30,7 +30,8 @@ SOFTWARE.
 #include <utility>
 #include <unordered_set>
 #include <functional>
-
+#include <memory>
+#include <exception>
 #include <iostream>
 
 namespace co {
@@ -104,8 +105,8 @@ public:
 
     enum class State {Created, Running, Suspend, Dead};
 
-    Routine():_logic([](){}), _state(State::Created) {}
-    Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) {}
+    Routine():_logic([](){}), _state(State::Created) { std::cout << "constructor: " << this << std::endl; }
+    Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { std::cout << "constructor: " << this << std::endl; }
     ~Routine() {
         std::cout << "destructor: " << this << std::endl;
         if (_parent) {
@@ -185,11 +186,18 @@ private:
         other.SetState(State::Running);
         auto success = _context.SwapContext(other._context);
         if (!success) {
+            std::cout << "not success Jump" << std::endl;
             set_running_routine(*this);
             other.SetState(State::Suspend);
         }
         if (_force_unwind) {
+            std::cout << "force unwind" << std::endl;
             throw ForceUnwindingException(*this);
+        }
+        if (_rethrow_exception) {
+            std::cout << "rethrow!" << std::endl;
+            _rethrow_exception = false;
+            std::rethrow_exception(_exception);
         }
         return success;
     }
@@ -200,7 +208,8 @@ private:
     Context _context;
     std::unordered_set<Routine*> _sub_routines;
     Routine *_parent = nullptr;
-    bool _force_unwind = false;
+    bool _force_unwind = false, _rethrow_exception = false;
+    std::exception_ptr _exception;
 };
 
 

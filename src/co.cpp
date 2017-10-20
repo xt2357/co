@@ -1,8 +1,4 @@
 #include "co.h"
-#include <cassert>
-
-#include <memory>
-#include <iostream>
 
 namespace co {
 
@@ -37,7 +33,8 @@ Routine & get_main_routine() {
 
 void routine_entry() {
     auto& r = get_running_routine();
-    std::unique_ptr<void, std::function<void(void*)>> always_do(nullptr, [&r](void*){
+    auto always_do = [&r]() {
+        std::cout << "finish routine work..........................................................................................." << std::endl;
 		r.SetState(Routine::State::Dead);
         for (auto sub : r._sub_routines) {
             Routine::RecursiveUnwindAndMarkDead(*sub);
@@ -46,7 +43,7 @@ void routine_entry() {
         r._sub_routines.clear();
         set_running_routine(*r._parent);
         r._parent->SetState(Routine::State::Running);
-	});
+	};
     // what if when _logic throws? do some context switching and rethrow it
     try {
         r._logic();
@@ -56,9 +53,14 @@ void routine_entry() {
         assert(e._routine_to_unwind._context.SwapContext(get_running_routine()._context));
     }
     catch (...) {
-        // TODO: deliver the excetion to upper routine
-        throw;
+        // deliver the exception to upper routine
+        always_do();
+        std::cout << "routine entry cached!" << std::endl;
+        r._parent->_exception = std::current_exception();
+        r._parent->_rethrow_exception = true;
+        return;
     }
+    always_do();
 }
 
 bool yield_to(Routine &other) {

@@ -38,6 +38,9 @@ void g_f1() {
     catch(...) {
         cout << "catched!" << endl;
     }
+    cout << "reenter f1 main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     gaoshi();
     cout << "f1: 2" << endl;
     co::yield_to(r2);
@@ -67,19 +70,19 @@ struct Func {
 
 int main() 
 {
-    auto f1 = []() {
-        Obj obj {"obj1"};
-        cout << "f1: 1" << endl;
-        co::yield_to(r2);
-        cout << "f1: 2" << endl;
-        co::yield_to(r2);
-    };
-    auto f2 = []() {
-        Obj obj {"obj2"};
-        cout << "f2: 1" << endl;
-        co::yield_to(r1);
-        cout << "f2: 2" << endl;
-    };
+    // auto f1 = []() {
+    //     Obj obj {"obj1"};
+    //     cout << "f1: 1" << endl;
+    //     co::yield_to(r2);
+    //     cout << "f1: 2" << endl;
+    //     co::yield_to(r2);
+    // };
+    // auto f2 = []() {
+    //     Obj obj {"obj2"};
+    //     cout << "f2: 1" << endl;
+    //     co::yield_to(r1);
+    //     cout << "f2: 2" << endl;
+    // };
     function<void()> func1 = Func(1), func2 = Func(2);
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);
