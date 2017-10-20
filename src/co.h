@@ -77,6 +77,7 @@ private:
 
 class Routine;
 void set_running_routine(Routine &routine);
+Routine &get_main_routine();
 
 class Routine {
 
@@ -103,9 +104,13 @@ public:
             r->_parent = nullptr;
         }
         if (_parent) {
-            assert(_parent->RemoveSubRoutine(this));
+            assert(_parent->RemoveSubRoutine(*this));
         }
     }
+
+    bool operator==(const Routine &other) { return this == &other; }
+    bool operator!=(const Routine &other) { return this != &other; }
+
     //rvalue reference? yes it is designed the only way to pass a functor in 
     bool SetBehavior(Delegate&& logic) {
         if (State::Created != _state) {
@@ -126,7 +131,7 @@ private:
         for (auto sub : r->_sub_routines) {
             RecursiveUnwindAndMarkDead(sub);
         }
-        if (r->GetState() != Routine::State::Created) {
+        if (r->GetState() != Routine::State::Created && *r != get_main_routine()) {
         	// TODO: unwind the coroutine stack of r whose state is suspend or running
         }
         r->SetState(State::Dead);
@@ -134,16 +139,16 @@ private:
 
     void SetState(State state) { _state = state; }
 
-    bool AttachSubRoutine(Routine *sub_routine) {
-        return _sub_routines.insert(sub_routine).second;
+    bool AttachSubRoutine(Routine &sub_routine) {
+        return _sub_routines.insert(&sub_routine).second;
     }
 
-    bool RemoveSubRoutine(Routine *sub_routine) {
-        return _sub_routines.erase(sub_routine);
+    bool RemoveSubRoutine(Routine &sub_routine) {
+        return _sub_routines.erase(&sub_routine);
     }
 
     bool PrepareContextForFirstResume(void (*start_point)(), Routine &parent) {
-        if (State::Created != _state || !parent.AttachSubRoutine(this) || !_context.MakeContext(start_point, parent._context)) {
+        if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context.MakeContext(start_point, parent._context)) {
             return false;
         }
         _parent = &parent;
@@ -175,5 +180,4 @@ private:
 
 
 bool yield_to(Routine &other);
-Routine &get_main_routine();
 }
