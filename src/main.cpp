@@ -19,12 +19,18 @@ co::Routine r1, r2;
 
 void gaoshi() {
     Obj obj {"obj3"};
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     yield_to(co::get_main_routine());
 }
 
 
 void g_f1() {
     Obj obj {"obj1"};
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f1: 1" << endl;
     co::yield_to(r2);
     gaoshi();
@@ -34,6 +40,9 @@ void g_f1() {
 
 void g_f2() {
     Obj obj {"obj2"};
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f2: 1" << endl;
     co::yield_to(r1);
     cout << "f2: 2" << endl;
@@ -68,7 +77,13 @@ int main()
     function<void()> func1 = Func(1), func2 = Func(2);
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     co::yield_to(r1);
     cout << "returned to main" << endl;
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     return 0;
 }

@@ -35,6 +35,7 @@ SOFTWARE.
 
 namespace co {
 
+
 struct Context {
 public:
 
@@ -77,7 +78,16 @@ private:
 
 class Routine;
 void set_running_routine(Routine &routine);
+Routine &get_running_routine();
 Routine &get_main_routine();
+
+
+class ForceUnwindingException
+{
+public:
+    ForceUnwindingException(Routine &routine_to_unwind):_routine_to_unwind(routine_to_unwind) {}
+    Routine &_routine_to_unwind;
+};
 
 class Routine {
 
@@ -97,15 +107,15 @@ public:
     Routine():_logic([](){}), _state(State::Created) {}
     Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) {}
     ~Routine() {
-        // std::cout << "destructor: " << this << std::endl;
-        _state = State::Dead;
-        for (auto r : _sub_routines) {
-            RecursiveUnwindAndMarkDead(r);
-            r->_parent = nullptr;
-        }
+        std::cout << "destructor: " << this << std::endl;
         if (_parent) {
             assert(_parent->RemoveSubRoutine(*this));
         }
+        for (auto r : _sub_routines) {
+            RecursiveUnwindAndMarkDead(*r);
+            r->_parent = nullptr;
+        }
+        RecursiveUnwindAndMarkDead(*this);
     }
 
     bool operator==(const Routine &other) { return this == &other; }
@@ -124,17 +134,27 @@ public:
 
 private:
 
-    static void RecursiveUnwindAndMarkDead(Routine *r) {
-    	if (r->GetState() == Routine::State::Dead) {
+    static void RecursiveUnwindAndMarkDead(Routine &r) {
+    	if (r.GetState() == Routine::State::Dead) {
     		return;
     	}
-        for (auto sub : r->_sub_routines) {
-            RecursiveUnwindAndMarkDead(sub);
+        for (auto sub : r._sub_routines) {
+            RecursiveUnwindAndMarkDead(*sub);
         }
-        if (r->GetState() != Routine::State::Created && *r != get_main_routine()) {
-        	// TODO: unwind the coroutine stack of r whose state is suspend or running
+        // here means the thread is destructing
+        if (r.GetState() == State::Running && r == get_main_routine()) {
+            r.SetState(State::Dead);
+            return;
         }
-        r->SetState(State::Dead);
+        // we can not handle a running coroutine which is not main_routine
+        assert(r.GetState() != State::Running);
+        if (r.GetState() != Routine::State::Created && r != get_main_routine()) {
+        	// TODO: unwind the coroutine stack of r whose state is suspend
+            r._force_unwind = true;
+            // return here after unwinding
+            get_running_routine()._context.SwapContext(r._context);
+        }
+        r.SetState(State::Dead);
     }
 
     void SetState(State state) { _state = state; }
@@ -162,11 +182,15 @@ private:
         }
         _state = State::Suspend;
         set_running_routine(other);
+        other.SetState(State::Running);
         auto success = _context.SwapContext(other._context);
         if (!success) {
             set_running_routine(*this);
+            other.SetState(State::Suspend);
         }
-        _state = State::Running;
+        if (_force_unwind) {
+            throw ForceUnwindingException(*this);
+        }
         return success;
     }
 
@@ -176,6 +200,7 @@ private:
     Context _context;
     std::unordered_set<Routine*> _sub_routines;
     Routine *_parent = nullptr;
+    bool _force_unwind = false;
 };
 
 

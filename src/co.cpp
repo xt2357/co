@@ -29,6 +29,9 @@ void set_running_routine(Routine &routine) {
 }
 
 Routine & get_main_routine() {
+    if (!tls_initialized) {
+        get_running_routine();
+    }
     return tls_main_routine;
 }
 
@@ -37,15 +40,20 @@ void routine_entry() {
     std::unique_ptr<void, std::function<void(void*)>> always_do(nullptr, [&r](void*){
 		r.SetState(Routine::State::Dead);
         for (auto sub : r._sub_routines) {
-            Routine::RecursiveUnwindAndMarkDead(sub);
+            Routine::RecursiveUnwindAndMarkDead(*sub);
             sub->_parent = nullptr;
         }
         r._sub_routines.clear();
         set_running_routine(*r._parent);
+        r._parent->SetState(Routine::State::Running);
 	});
     // what if when _logic throws? do some context switching and rethrow it
     try {
         r._logic();
+    }
+    // unwind this coroutine
+    catch (ForceUnwindingException &e) {
+        e._routine_to_unwind._context.SwapContext(get_running_routine()._context);
     }
     catch (...) {
         throw;
