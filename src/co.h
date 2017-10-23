@@ -83,12 +83,24 @@ Routine &get_running_routine();
 Routine &get_main_routine();
 
 
+// client code should never absorbing this exception otherwise it will cause incomplete stack unwinding
 class ForceUnwindingException
 {
 public:
     ForceUnwindingException(Routine &routine_to_unwind):_routine_to_unwind(routine_to_unwind) {}
     Routine &_routine_to_unwind;
 };
+
+// means the program should have be terminated if this is catched
+// before yielding to another routine, the std::current_exception will be backuped, and restored after yielding back
+// if there is no current exception to backup(no exception being handled), ShouldHaveBeTerminate will be restored to std::current_exception() after yielding back 
+// (cauz std::current_exception() will not return empty exception_ptr any more if some exceptions are already handled)
+// class ShouldHaveBeTerminate: public std::exception
+// {
+// public:
+//     ShouldHaveBeTerminate() {}
+//     virtual const char * what() { return "the program should have be terminated."; }
+// };
 
 class Routine {
 
@@ -178,7 +190,7 @@ private:
     }
 
     bool Jump(Routine &other) {
-        if (other.GetState() != State::Suspend) {
+        if (std::current_exception() || other.GetState() != State::Suspend) {
             return false;
         }
         _state = State::Suspend;
@@ -190,15 +202,18 @@ private:
             set_running_routine(*this);
             other.SetState(State::Suspend);
         }
+        // unwind to break point
         if (_force_unwind) {
             std::cout << "force unwind" << std::endl;
             throw ForceUnwindingException(*this);
         }
+        // throw to break point
         if (_rethrow_exception) {
             std::cout << "rethrow!" << std::endl;
             _rethrow_exception = false;
             std::rethrow_exception(_exception);
         }
+        // return or normal yield to break point
         return success;
     }
 

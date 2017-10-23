@@ -42,8 +42,9 @@ void g_f1() {
     catch(...) {
         cout << "catched!" << endl;
         // throw_exception();
-        yield_to(co::get_main_routine());
+        // assert(yield_to(co::get_main_routine()));
     }
+    assert(yield_to(co::get_main_routine()));
     cout << "reenter f1 main:" << int(co::get_main_routine().GetState()) << endl;
     cout << "r1:" << int(r1.GetState()) << endl;
     cout << "r2:" << int(r2.GetState()) << endl;
@@ -95,9 +96,15 @@ int main()
     cout << "main:" << int(co::get_main_routine().GetState()) << endl;
     cout << "r1:" << int(r1.GetState()) << endl;
     cout << "r2:" << int(r2.GetState()) << endl;
+    // try {
+    //     throw 20;
+    // }
+    // catch(...) {
+    //     cout << (bool)(current_exception()) << endl;
+    // }
+    // cout << (bool)(current_exception()) << endl;
     try {
-        // co::yield_to(r1);
-        cout << (std::current_exception() == nullptr) << endl;
+        co::yield_to(r1);
         throw;
     }
     catch(...) {
