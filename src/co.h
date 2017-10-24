@@ -91,17 +91,6 @@ public:
     Routine &_routine_to_unwind;
 };
 
-// means the program should have be terminated if this is catched
-// before yielding to another routine, the std::current_exception will be backuped, and restored after yielding back
-// if there is no current exception to backup(no exception being handled), ShouldHaveBeTerminate will be restored to std::current_exception() after yielding back 
-// (cauz std::current_exception() will not return empty exception_ptr any more if some exceptions are already handled)
-// class ShouldHaveBeTerminate: public std::exception
-// {
-// public:
-//     ShouldHaveBeTerminate() {}
-//     virtual const char * what() { return "the program should have be terminated."; }
-// };
-
 class Routine {
 
 friend void routine_entry();
@@ -229,4 +218,10 @@ private:
 
 
 bool yield_to(Routine &other);
+
+// template <typename Ret, typename... Args>
+// Ret start_routine(std::function<Ret(Args...)> &&func, Args... args) {
+//     return static_cast<Ret>(nullptr);
+// }
+
 }

@@ -105,6 +105,7 @@ int main()
     // cout << (bool)(current_exception()) << endl;
     try {
         co::yield_to(r1);
+        // co::start_routine(g_f1);
         // throw;
     }
     catch(...) {
