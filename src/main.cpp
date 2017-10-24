@@ -105,7 +105,7 @@ int main()
     // cout << (bool)(current_exception()) << endl;
     try {
         co::yield_to(r1);
-        throw;
+        // throw;
     }
     catch(...) {
         cout << "catched in main" << endl;
