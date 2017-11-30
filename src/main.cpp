@@ -1,4 +1,7 @@
+#include <cstdlib>
+
 #include <iostream>
+#include <vector>
 
 #include "co.h"
 
@@ -31,6 +34,7 @@ void throw_exception() {
 }
 
 void g_f1() {
+    throw 20;
     Obj obj {"obj1"};
     cout << "main:" << int(co::get_main_routine().GetState()) << endl;
     cout << "r1:" << int(r1.GetState()) << endl;
@@ -74,6 +78,14 @@ struct Func {
     int x = 0;
 };
 
+void test() {
+    cout << (std::current_exception() == nullptr) << endl;
+}
+
+void yield_back(){
+    cout << "yield_to new routine" << endl;
+    co::yield_to(co::get_main_routine());
+}
 
 int main() 
 {
@@ -90,27 +102,42 @@ int main()
     //     co::yield_to(r1);
     //     cout << "f2: 2" << endl;
     // };
+    vector<co::Routine> routines;
+    for (int i = 0; i < 100; ++i) {
+        cout << "new routine created" << endl;
+        routines.push_back(co::Routine{yield_back});
+        co::yield_to(routines.back());
+    }
+    int i;
+    cin >> i; 
     function<void()> func1 = Func(1), func2 = Func(2);
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);
     cout << "main:" << int(co::get_main_routine().GetState()) << endl;
     cout << "r1:" << int(r1.GetState()) << endl;
     cout << "r2:" << int(r2.GetState()) << endl;
-    // try {
-    //     throw 20;
-    // }
-    // catch(...) {
-    //     cout << (bool)(current_exception()) << endl;
-    // }
-    // cout << (bool)(current_exception()) << endl;
+    try {
+        throw 20;
+    }
+    catch(...) {
+        cout << (bool)(current_exception()) << endl;
+    }
+    cout << (bool)(current_exception()) << endl;
     try {
         co::yield_to(r1);
-        // co::start_routine(g_f1);
+        // co::start_routine(std::bind(g_f1));
         // throw;
     }
     catch(...) {
         cout << "catched in main" << endl;
+        cout << (std::current_exception() == nullptr) << endl;
+        try {
+            test();
+        }
+        catch (...)
+        {}
     }
+    cout << (std::current_exception() == nullptr) << endl;
     cout << "returned to main" << endl;
     cout << "main:" << int(co::get_main_routine().GetState()) << endl;
     cout << "r1:" << int(r1.GetState()) << endl;

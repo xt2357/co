@@ -40,6 +40,24 @@ namespace co {
 struct Context {
 public:
 
+    Context() = default;
+
+    Context(Context &&other) {
+        _stack = other._stack;
+        _ucontext = other._ucontext;
+        other._stack = nullptr;
+    }
+
+    Context& operator=(Context &&other) {
+        if (this != &other) {
+            free(_stack);
+            _stack = other._stack;
+            _ucontext = other._ucontext;
+            other._stack = nullptr;
+        }
+        return *this;
+    }
+
     // make context which start at start_point and start_point return to start_point_return_to
     bool MakeContext(void (*start_point)(), Context &start_point_return_to) {
         if (_stack || -1 == getcontext(&_ucontext)) {
@@ -65,7 +83,7 @@ public:
 
     ~Context() {
         if (_stack) {
-            delete _stack;
+            free(_stack);
         }
     }
 
@@ -102,14 +120,64 @@ public:
     Routine(const Routine &) = delete;
     Routine& operator=(const Routine &) = delete;
 
+    Routine(Routine &&other): _logic(std::move(other._logic))
+                            , _state(std::move(other._state))
+                            , _context(std::move(other._context))
+                            , _sub_routines(std::move(other._sub_routines))
+                            , _parent(std::move(other._parent))
+                            , _force_unwind(std::move(other._force_unwind))
+                            , _rethrow_exception(std::move(other._rethrow_exception))
+                            , _exception(std::move(other._exception)) {
+        other._logic = [](){};
+        other._state = State::Dead;
+        other._parent = nullptr;
+        other._force_unwind = false;
+        other._rethrow_exception = false;
+        if (_parent) {
+            _parent->RemoveSubRoutine(other);
+            _parent->AttachSubRoutine(*this);
+        }
+        for (auto &son : _sub_routines) {
+            son->_parent = this;
+        }
+    }
+    Routine& operator=(Routine &&other) {
+        if (this != &other) {
+            if (_parent) {
+                assert(_parent->RemoveSubRoutine(*this));
+            }
+            for (auto r : _sub_routines) {
+                RecursiveUnwindAndMarkDead(*r);
+                r->_parent = nullptr;
+            }
+            RecursiveUnwindAndMarkDead(*this);
+            _logic = std::move(other._logic);
+            _state = std::move(other._state);
+            _context = std::move(other._context);
+            _sub_routines = std::move(other._sub_routines);
+            _parent = std::move(other._parent);
+            _force_unwind = std::move(other._force_unwind);
+            _rethrow_exception = std::move(other._rethrow_exception);
+            _exception = std::move(other._exception);
+            if (_parent) {
+                _parent->RemoveSubRoutine(other);
+                _parent->AttachSubRoutine(*this);
+            }
+            for (auto &son : _sub_routines) {
+                son->_parent = this;
+            }
+        }
+        return *this;
+    }
+
     typedef std::function<void(void)> Delegate;
 
     enum class State {Created, Running, Suspend, Dead};
 
-    Routine():_logic([](){}), _state(State::Created) { std::cout << "constructor: " << this << std::endl; }
-    Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { std::cout << "constructor: " << this << std::endl; }
+    Routine():_logic([](){}), _state(State::Created) {  }
+    Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { }
     ~Routine() {
-        std::cout << "destructor: " << this << std::endl;
+        //std::cout << "destructor: " << this << std::endl;
         if (_parent) {
             assert(_parent->RemoveSubRoutine(*this));
         }
@@ -219,9 +287,38 @@ private:
 
 bool yield_to(Routine &other);
 
-// template <typename Ret, typename... Args>
-// Ret start_routine(std::function<Ret(Args...)> &&func, Args... args) {
-//     return static_cast<Ret>(nullptr);
+
+// struct StartRoutineFailException: public std::exception {
+//     virtual const char * what() { return "start_routine fail"; }
+// };
+
+// template <typename Callable>
+// auto start_routine(Callable &&func) -> decltype(func()) {
+//     bool is_void = std::is_same<decltype(func()), void>::value;
+//     decltype(func()) *result = nullptr;
+//     if (!is_void) {
+//         result = new decltype(func());
+//     }
+//     Routine r {[&]() {
+//         if (is_void) {
+//             func();
+//         }
+//         else {
+//             *result = func();
+//         }
+//     }};
+//     if (!yield_to(r)) {
+//         throw StartRoutineFailException();
+//     }
+//     if (!is_void) {
+//         decltype(func) res = *result;
+//         delete result;
+//         return res;
+//     }
+//     else {
+//         return;
+//     }
 // }
+
 
 }
