@@ -110,9 +110,9 @@ int main()
     co::get_main_routine();
     vector<co::Routine> routines;
     auto t1 = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         cout << "new routine created" << endl;
-        routines.emplace_back(co::Routine{yield_back});
+        routines.emplace_back(yield_back);
         routines.back()->GetState();
         co::yield_to(routines.back());
     }
@@ -134,6 +134,9 @@ int main()
 
     function<void()> func1 = Func(1), func2 = Func(2);
     co::Routine cr {func1};
+    co::Routine cr2 {func1};
+    cout << "equal:" << (cr == cr) << endl;
+    cout << "no equal: " << (cr != cr2) << endl;
     r1->SetBehavior(g_f1);
     r2->SetBehavior(g_f2);
     cout << "main:" << int(co::get_main_routine()->GetState()) << endl;

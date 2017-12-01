@@ -187,9 +187,9 @@ public:
 
     enum class State {Created, Prepared, Running, Suspend, Dead};
 
-    _Routine():_logic([](){}), _state(State::Created), _context(new Context()) {  std::cout << "construct:" << this << "empty logic" << std::endl; }
-    _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created), _context(new Context()) { std::cout << "construct:" << this << std::endl;}
-    _Routine(const Delegate &logic):_logic(logic), _state(State::Created), _context(new Context()) {}
+    _Routine():_logic([](){}), _state(State::Created) {  std::cout << "construct:" << this << "empty logic" << std::endl; }
+    _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { std::cout << "construct:" << this << std::endl;}
+    _Routine(const Delegate &logic):_logic(logic), _state(State::Created) {}
     ~_Routine() {
         //std::cout << "destructor: " << this << std::endl;
         std::cout << "detor:" << int(_state) << " " << this << std::endl;
@@ -250,7 +250,7 @@ private:
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
-            assert(get_running_routine()->_context->SwapContext(*r._context));
+            assert(get_running_routine()->_context.SwapContext(r._context));
         }
         r.SetState(State::Dead);
     }
@@ -266,7 +266,7 @@ private:
     }
 
     bool PrepareContextForFirstResume(void (*start_point)(), _Routine &parent) {
-        if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context->MakeContext(start_point, *parent._context)) {
+        if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context.MakeContext(start_point, parent._context)) {
             return false;
         }
         _parent = &parent;
@@ -282,7 +282,7 @@ private:
         auto state_backup = other.GetState();
         set_running_routine(other);
         other.SetState(State::Running);
-        auto success = _context->SwapContext(*other._context);
+        auto success = _context.SwapContext(other._context);
         if (!success) {
             std::cout << "not success Jump" << std::endl;
             set_running_routine(*this);
@@ -306,7 +306,7 @@ private:
 private:
     Delegate _logic;
     State _state;
-    std::unique_ptr<Context> _context;
+    Context _context;
     std::unordered_set<_Routine*> _sub_routines;
     _Routine *_parent = nullptr;
     bool _force_unwind = false, _rethrow_exception = false;

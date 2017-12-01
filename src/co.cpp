@@ -50,7 +50,7 @@ void routine_entry() {
     }
     // unwind this coroutine done
     catch (ForceUnwindingException &e) {
-        assert(e._routine_to_unwind._context->SwapContext(*get_running_routine()->_context));
+        assert(e._routine_to_unwind._context.SwapContext(get_running_routine()->_context));
     }
     catch (...) {
         // deliver the exception to upper _Routine
