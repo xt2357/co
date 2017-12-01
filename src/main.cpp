@@ -112,7 +112,8 @@ int main()
     auto t1 = chrono::high_resolution_clock::now();
     for (int i = 0; i < 2; ++i) {
         cout << "new routine created" << endl;
-        routines.emplace_back(co::Routine(new co::_Routine{yield_back}));
+        routines.emplace_back(co::Routine{yield_back});
+        routines.back()->GetState();
         co::yield_to(routines.back());
     }
     auto t2 = chrono::high_resolution_clock::now();

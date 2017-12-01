@@ -109,6 +109,8 @@ public:
     _Routine &_routine_to_unwind;
 };
 
+typedef std::function<void(void)> Delegate;
+
 class _Routine {
 
 friend void routine_entry();
@@ -181,7 +183,7 @@ public:
     //     return *this;
     // }
 
-    typedef std::function<void(void)> Delegate;
+    
 
     enum class State {Created, Prepared, Running, Suspend, Dead};
 
@@ -302,7 +304,20 @@ private:
     std::exception_ptr _exception;
 };
 
-using Routine = std::unique_ptr<_Routine>;
+// using Routine = std::unique_ptr<_Routine>;
+
+class Routine
+{
+public:
+    Routine(): _ptr(new _Routine{}) {}
+    Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) {}
+
+    _Routine& operator *() { return *_ptr; }
+    _Routine* operator ->() {return _ptr.get(); }
+    
+private:
+    std::unique_ptr<_Routine> _ptr;
+};
 
 bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
