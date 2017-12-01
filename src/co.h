@@ -42,21 +42,21 @@ public:
 
     Context() = default;
 
-    Context(Context &&other) {
-        _stack = other._stack;
-        _ucontext = other._ucontext;
-        other._stack = nullptr;
-    }
+    // Context(Context &&other) {
+    //     _stack = other._stack;
+    //     _ucontext = other._ucontext;
+    //     other._stack = nullptr;
+    // }
 
-    Context& operator=(Context &&other) {
-        if (this != &other) {
-            free(_stack);
-            _stack = other._stack;
-            _ucontext = other._ucontext;
-            other._stack = nullptr;
-        }
-        return *this;
-    }
+    // Context& operator=(Context &&other) {
+    //     if (this != &other) {
+    //         free(_stack);
+    //         _stack = other._stack;
+    //         _ucontext = other._ucontext;
+    //         other._stack = nullptr;
+    //     }
+    //     return *this;
+    // }
 
     // make context which start at start_point and start_point return to start_point_return_to
     bool MakeContext(void (*start_point)(), Context &start_point_return_to) {
@@ -95,101 +95,116 @@ private:
     
 };
 
-class Routine;
-void set_running_routine(Routine &routine);
-Routine &get_running_routine();
-Routine &get_main_routine();
+class _Routine;
+void set_running_routine(_Routine &_Routine);
+_Routine &get_running_routine();
+_Routine &get_main_routine();
 
 
 // client code should never absorbing this exception otherwise it will cause incomplete stack unwinding
 class ForceUnwindingException
 {
 public:
-    ForceUnwindingException(Routine &routine_to_unwind):_routine_to_unwind(routine_to_unwind) {}
-    Routine &_routine_to_unwind;
+    ForceUnwindingException(_Routine &routine_to_unwind):_routine_to_unwind(routine_to_unwind) {}
+    _Routine &_routine_to_unwind;
 };
 
-class Routine {
+class _Routine {
 
 friend void routine_entry();
-friend Routine &get_running_routine();
-friend bool yield_to(Routine &);
+friend _Routine &get_running_routine();
+friend bool yield_to(_Routine &);
 
 public:
 
-    Routine(const Routine &) = delete;
-    Routine& operator=(const Routine &) = delete;
+    _Routine(const _Routine &) = delete;
+    _Routine& operator=(const _Routine &) = delete;
 
-    Routine(Routine &&other): _logic(std::move(other._logic))
-                            , _state(std::move(other._state))
-                            , _context(std::move(other._context))
-                            , _sub_routines(std::move(other._sub_routines))
-                            , _parent(std::move(other._parent))
-                            , _force_unwind(std::move(other._force_unwind))
-                            , _rethrow_exception(std::move(other._rethrow_exception))
-                            , _exception(std::move(other._exception)) {
-        other._logic = [](){};
-        other._state = State::Dead;
-        other._parent = nullptr;
-        other._force_unwind = false;
-        other._rethrow_exception = false;
-        if (_parent) {
-            assert(_parent->RemoveSubRoutine(other));
-            assert(_parent->AttachSubRoutine(*this));
-        }
-        for (auto &son : _sub_routines) {
-            son->_parent = this;
-        }
-    }
-    Routine& operator=(Routine &&other) {
-        if (this != &other) {
-            if (_parent) {
-                assert(_parent->RemoveSubRoutine(*this));
-            }
-            for (auto r : _sub_routines) {
-                RecursiveUnwindAndMarkDead(*r);
-                r->_parent = nullptr;
-            }
-            RecursiveUnwindAndMarkDead(*this);
-            _logic = std::move(other._logic);
-            _state = std::move(other._state);
-            _context = std::move(other._context);
-            _sub_routines = std::move(other._sub_routines);
-            _parent = std::move(other._parent);
-            _force_unwind = std::move(other._force_unwind);
-            _rethrow_exception = std::move(other._rethrow_exception);
-            _exception = std::move(other._exception);
-            if (_parent) {
-                assert(_parent->RemoveSubRoutine(other));
-                assert(_parent->AttachSubRoutine(*this));
-            }
-            for (auto &son : _sub_routines) {
-                son->_parent = this;
-            }
-        }
-        return *this;
-    }
+    /*
+    _Routine is non-movable
+    cauz stack of its'context will contain `this` pointers of old _Routine objects 
+    which will be invalid after moving them
+    (moving will cause change of the address of _Routine objects)
+    */
+
+    // _Routine(_Routine &&other) {
+    //     std::cout << "move ctor: move to " << this << std::endl;
+    //     _logic = std::move(other._logic);
+    //     _state = std::move(other._state);
+    //     _context = std::move(other._context);
+    //     _sub_routines = std::move(other._sub_routines);
+    //     _parent = std::move(other._parent);
+    //     _force_unwind = std::move(other._force_unwind);
+    //     _rethrow_exception = std::move(other._rethrow_exception);
+    //     _exception = std::move(other._exception);
+    //     other._logic = [](){};
+    //     other._state = State::Dead;
+    //     other._parent = nullptr;
+    //     other._force_unwind = false;
+    //     other._rethrow_exception = false;
+    //     if (_parent) {
+    //         assert(_parent->RemoveSubRoutine(other));
+    //         assert(_parent->AttachSubRoutine(*this));
+    //     }
+    //     for (auto &son : _sub_routines) {
+    //         son->_parent = this;
+    //     }
+    // }
+    // _Routine& operator=(_Routine &&other) {
+    //     std::cout << "move =" << std::endl;
+    //     if (this != &other) {
+    //         if (_parent) {
+    //             assert(_parent->RemoveSubRoutine(*this));
+    //         }
+    //         for (auto r : _sub_routines) {
+    //             RecursiveUnwindAndMarkDead(*r);
+    //             r->_parent = nullptr;
+    //         }
+    //         _sub_routines.clear();
+    //         RecursiveUnwindAndMarkDead(*this);
+    //         _logic = std::move(other._logic);
+    //         _state = std::move(other._state);
+    //         _context = std::move(other._context);
+    //         _sub_routines = std::move(other._sub_routines);
+    //         _parent = std::move(other._parent);
+    //         _force_unwind = std::move(other._force_unwind);
+    //         _rethrow_exception = std::move(other._rethrow_exception);
+    //         _exception = std::move(other._exception);
+    //         if (_parent) {
+    //             assert(_parent->RemoveSubRoutine(other));
+    //             assert(_parent->AttachSubRoutine(*this));
+    //         }
+    //         for (auto &son : _sub_routines) {
+    //             son->_parent = this;
+    //         }
+    //     }
+    //     return *this;
+    // }
 
     typedef std::function<void(void)> Delegate;
 
     enum class State {Created, Prepared, Running, Suspend, Dead};
 
-    Routine():_logic([](){}), _state(State::Created) {  }
-    Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { }
-    ~Routine() {
+    _Routine():_logic([](){}), _state(State::Created), _context(new Context()) {  std::cout << "construct:" << this << "empty logic" << std::endl; }
+    _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created), _context(new Context()) { std::cout << "construct:" << this << std::endl;}
+    ~_Routine() {
         //std::cout << "destructor: " << this << std::endl;
+        std::cout << "detor:" << int(_state) << " " << this << std::endl;
         if (_parent) {
+            std::cout << "move pointer from parent" << std::endl;
             assert(_parent->RemoveSubRoutine(*this));
         }
         for (auto r : _sub_routines) {
             RecursiveUnwindAndMarkDead(*r);
             r->_parent = nullptr;
         }
+        _sub_routines.clear();
+        std::cout << "sub routines cleared" << std::endl;
         RecursiveUnwindAndMarkDead(*this);
     }
 
-    bool operator==(const Routine &other) { return this == &other; }
-    bool operator!=(const Routine &other) { return this != &other; }
+    bool operator==(const _Routine &other) { return this == &other; }
+    bool operator!=(const _Routine &other) { return this != &other; }
 
     //rvalue reference? yes it is designed the only way to pass a functor in 
     bool SetBehavior(Delegate&& logic) {
@@ -204,8 +219,9 @@ public:
 
 private:
 
-    static void RecursiveUnwindAndMarkDead(Routine &r) {
-        if (r.GetState() == Routine::State::Dead) {
+    static void RecursiveUnwindAndMarkDead(_Routine &r) {
+        std::cout << "RecursiveUnwindAndMarkDead" << std::endl;
+        if (r.GetState() == _Routine::State::Dead) {
             return;
         }
         for (auto sub : r._sub_routines) {
@@ -218,27 +234,28 @@ private:
         }
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
-        if (r.GetState() == Routine::State::Suspend && r != get_main_routine()) {
+        if (r.GetState() == _Routine::State::Suspend && r != get_main_routine()) {
+            std::cout << "unwind" << std::endl;
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
-            assert(get_running_routine()._context.SwapContext(r._context));
+            assert(get_running_routine()._context->SwapContext(*r._context));
         }
         r.SetState(State::Dead);
     }
 
     void SetState(State state) { _state = state; }
 
-    bool AttachSubRoutine(Routine &sub_routine) {
+    bool AttachSubRoutine(_Routine &sub_routine) {
         return _sub_routines.insert(&sub_routine).second;
     }
 
-    bool RemoveSubRoutine(Routine &sub_routine) {
+    bool RemoveSubRoutine(_Routine &sub_routine) {
         return _sub_routines.erase(&sub_routine);
     }
 
-    bool PrepareContextForFirstResume(void (*start_point)(), Routine &parent) {
-        if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context.MakeContext(start_point, parent._context)) {
+    bool PrepareContextForFirstResume(void (*start_point)(), _Routine &parent) {
+        if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context->MakeContext(start_point, *parent._context)) {
             return false;
         }
         _parent = &parent;
@@ -246,7 +263,7 @@ private:
         return true;
     }
 
-    bool Jump(Routine &other) {
+    bool Jump(_Routine &other) {
         if (std::current_exception() || (other.GetState() != State::Suspend && other.GetState() != State::Prepared)) {
             return false;
         }
@@ -254,7 +271,7 @@ private:
         auto state_backup = other.GetState();
         set_running_routine(other);
         other.SetState(State::Running);
-        auto success = _context.SwapContext(other._context);
+        auto success = _context->SwapContext(*other._context);
         if (!success) {
             std::cout << "not success Jump" << std::endl;
             set_running_routine(*this);
@@ -278,14 +295,16 @@ private:
 private:
     Delegate _logic;
     State _state;
-    Context _context;
-    std::unordered_set<Routine*> _sub_routines;
-    Routine *_parent = nullptr;
+    std::unique_ptr<Context> _context;
+    std::unordered_set<_Routine*> _sub_routines;
+    _Routine *_parent = nullptr;
     bool _force_unwind = false, _rethrow_exception = false;
     std::exception_ptr _exception;
 };
 
+using Routine = std::unique_ptr<_Routine>;
 
+bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
 
 
@@ -300,7 +319,7 @@ bool yield_to(Routine &other);
 //     if (!is_void) {
 //         result = new decltype(func());
 //     }
-//     Routine r {[&]() {
+//     _Routine r {[&]() {
 //         if (is_void) {
 //             func();
 //         }

@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
+#include <chrono>
 
 #include "co.h"
 
@@ -17,7 +19,7 @@ private:
     const char *_s;
 };
 
-co::Routine r1, r2;
+co::_Routine r1, r2;
 
 
 void gaoshi() {
@@ -66,7 +68,7 @@ void g_f2() {
     throw 10;
     co::yield_to(r1);
     cout << "f2: 2" << endl;
-    co::Routine sub {[](){cout<<"sub"<<endl;}};
+    co::_Routine sub {[](){cout<<"sub"<<endl;}};
     co::yield_to(sub);
 }
 
@@ -80,7 +82,7 @@ struct Func {
 
 void test() {
     cout << (std::current_exception() == nullptr) << endl;
-    co::Routine r;
+    co::_Routine r;
     cout << co::yield_to(r) << endl;
     cout << "test finish" << endl;
 }
@@ -105,14 +107,30 @@ int main()
     //     co::yield_to(r1);
     //     cout << "f2: 2" << endl;
     // };
-    // vector<co::Routine> routines;
-    // for (int i = 0; i < 1000; ++i) {
-    //     cout << "new routine created" << endl;
-    //     routines.push_back(co::Routine{yield_back});
-    //     co::yield_to(routines.back());
+    co::get_main_routine();
+    vector<co::Routine> routines;
+    auto t1 = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 2; ++i) {
+        cout << "new routine created" << endl;
+        routines.emplace_back(co::Routine(new co::_Routine{yield_back}));
+        co::yield_to(routines.back());
+    }
+    auto t2 = chrono::high_resolution_clock::now();
+    cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
+    int i;
+    cin >> i; 
+    // co::Routine testr {[](){
+    //     while (1) {
+    //         co::yield_to(co::get_main_routine());
+    //     }
+    // }};
+    // t1 = chrono::high_resolution_clock::now();
+    // for (int i = 0; i < 10000; ++i) {
+    //     assert(co::yield_to(testr));
     // }
-    // int i;
-    // cin >> i; 
+    // t2 = chrono::high_resolution_clock::now();
+    // cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
+
     function<void()> func1 = Func(1), func2 = Func(2);
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);
