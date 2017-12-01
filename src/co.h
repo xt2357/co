@@ -97,8 +97,8 @@ private:
 
 class _Routine;
 void set_running_routine(_Routine &_Routine);
-_Routine &get_running_routine();
-_Routine &get_main_routine();
+_Routine *get_running_routine();
+_Routine *get_main_routine();
 
 
 // client code should never absorbing this exception otherwise it will cause incomplete stack unwinding
@@ -114,7 +114,7 @@ typedef std::function<void(void)> Delegate;
 class _Routine {
 
 friend void routine_entry();
-friend _Routine &get_running_routine();
+friend _Routine *get_running_routine();
 friend bool yield_to(_Routine &);
 
 public:
@@ -230,18 +230,18 @@ private:
             RecursiveUnwindAndMarkDead(*sub);
         }
         // here means the thread is destructing
-        if (r.GetState() == State::Running && r == get_main_routine()) {
+        if (r.GetState() == State::Running && r == *get_main_routine()) {
             r.SetState(State::Dead);
             return;
         }
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
-        if (r.GetState() == _Routine::State::Suspend && r != get_main_routine()) {
+        if (r.GetState() == _Routine::State::Suspend && r != *get_main_routine()) {
             std::cout << "unwind" << std::endl;
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
-            assert(get_running_routine()._context->SwapContext(*r._context));
+            assert(get_running_routine()->_context->SwapContext(*r._context));
         }
         r.SetState(State::Dead);
     }
@@ -312,8 +312,11 @@ public:
     Routine(): _ptr(new _Routine{}) {}
     Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) {}
 
-    _Routine& operator *() { return *_ptr; }
-    _Routine* operator ->() {return _ptr.get(); }
+    _Routine& operator *() const { return *_ptr; }
+    _Routine* operator ->() const {return _ptr.get(); }
+
+    bool operator==(const Routine &other) { return **this == *other; }
+    bool operator!=(const Routine &other) { return **this != *other; }
     
 private:
     std::unique_ptr<_Routine> _ptr;
@@ -321,6 +324,7 @@ private:
 
 bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
+bool yield_to(_Routine *other);
 
 
 // struct StartRoutineFailException: public std::exception {

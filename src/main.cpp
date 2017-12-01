@@ -19,14 +19,14 @@ private:
     const char *_s;
 };
 
-co::_Routine r1, r2;
+co::Routine r1, r2;
 
 
 void gaoshi() {
     Obj obj {"obj3"};
-    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     yield_to(co::get_main_routine());
 }
 
@@ -38,9 +38,9 @@ void throw_exception() {
 void g_f1() {
     throw 20;
     Obj obj {"obj1"};
-    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     cout << "f1: 1" << endl;
     try {
         co::yield_to(r2);
@@ -51,9 +51,9 @@ void g_f1() {
         // assert(yield_to(co::get_main_routine()));
     }
     assert(yield_to(co::get_main_routine()));
-    cout << "reenter f1 main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    cout << "reenter f1 main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     gaoshi();
     cout << "f1: 2" << endl;
     co::yield_to(r2);
@@ -61,14 +61,14 @@ void g_f1() {
 
 void g_f2() {
     Obj obj {"obj2"};
-    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     cout << "f2: 1" << endl;
     throw 10;
     co::yield_to(r1);
     cout << "f2: 2" << endl;
-    co::_Routine sub {[](){cout<<"sub"<<endl;}};
+    co::Routine sub {[](){cout<<"sub"<<endl;}};
     co::yield_to(sub);
 }
 
@@ -82,7 +82,7 @@ struct Func {
 
 void test() {
     cout << (std::current_exception() == nullptr) << endl;
-    co::_Routine r;
+    co::Routine r;
     cout << co::yield_to(r) << endl;
     cout << "test finish" << endl;
 }
@@ -133,11 +133,11 @@ int main()
     // cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
 
     function<void()> func1 = Func(1), func2 = Func(2);
-    r1.SetBehavior(g_f1);
-    r2.SetBehavior(g_f2);
-    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    r1->SetBehavior(g_f1);
+    r2->SetBehavior(g_f2);
+    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     try {
         throw 20;
     }
@@ -161,8 +161,8 @@ int main()
     }
     cout << (std::current_exception() == nullptr) << endl;
     cout << "returned to main" << endl;
-    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
-    cout << "r1:" << int(r1.GetState()) << endl;
-    cout << "r2:" << int(r2.GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
+    cout << "r1:" << int(r1->GetState()) << endl;
+    cout << "r2:" << int(r2->GetState()) << endl;
     return 0;
 }
