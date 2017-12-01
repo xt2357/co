@@ -134,8 +134,8 @@ public:
         other._force_unwind = false;
         other._rethrow_exception = false;
         if (_parent) {
-            _parent->RemoveSubRoutine(other);
-            _parent->AttachSubRoutine(*this);
+            assert(_parent->RemoveSubRoutine(other));
+            assert(_parent->AttachSubRoutine(*this));
         }
         for (auto &son : _sub_routines) {
             son->_parent = this;
@@ -160,8 +160,8 @@ public:
             _rethrow_exception = std::move(other._rethrow_exception);
             _exception = std::move(other._exception);
             if (_parent) {
-                _parent->RemoveSubRoutine(other);
-                _parent->AttachSubRoutine(*this);
+                assert(_parent->RemoveSubRoutine(other));
+                assert(_parent->AttachSubRoutine(*this));
             }
             for (auto &son : _sub_routines) {
                 son->_parent = this;
