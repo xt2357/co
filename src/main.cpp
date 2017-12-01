@@ -133,6 +133,7 @@ int main()
     // cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
 
     function<void()> func1 = Func(1), func2 = Func(2);
+    co::Routine cr {func1};
     r1->SetBehavior(g_f1);
     r2->SetBehavior(g_f2);
     cout << "main:" << int(co::get_main_routine()->GetState()) << endl;

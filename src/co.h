@@ -189,6 +189,7 @@ public:
 
     _Routine():_logic([](){}), _state(State::Created), _context(new Context()) {  std::cout << "construct:" << this << "empty logic" << std::endl; }
     _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created), _context(new Context()) { std::cout << "construct:" << this << std::endl;}
+    _Routine(const Delegate &logic):_logic(logic), _state(State::Created), _context(new Context()) {}
     ~_Routine() {
         //std::cout << "destructor: " << this << std::endl;
         std::cout << "detor:" << int(_state) << " " << this << std::endl;
@@ -214,6 +215,14 @@ public:
             return false;
         }
         _logic = std::move(logic);
+        return true;
+    }
+
+    bool SetBehavior(const Delegate& logic) {
+        if (State::Created != _state) {
+            return false;
+        }
+        _logic = logic;
         return true;
     }
 
@@ -311,6 +320,7 @@ class Routine
 public:
     Routine(): _ptr(new _Routine{}) {}
     Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) {}
+    Routine(const Delegate &logic): _ptr(new _Routine {logic}) {}
 
     _Routine& operator *() const { return *_ptr; }
     _Routine* operator ->() const {return _ptr.get(); }
