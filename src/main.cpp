@@ -88,7 +88,7 @@ void test() {
 }
 
 void yield_back(){
-    cout << "yield_to new routine" << endl;
+    // cout << "yield_to new routine" << endl;
     co::yield_to(co::get_main_routine());
 }
 
@@ -111,7 +111,7 @@ int main()
     vector<co::Routine> routines;
     auto t1 = chrono::high_resolution_clock::now();
     for (int i = 0; i < 1000; ++i) {
-        cout << "new routine created" << endl;
+        // cout << "new routine created" << endl;
         routines.emplace_back(yield_back);
         routines.back()->GetState();
         co::yield_to(routines.back());
@@ -120,17 +120,17 @@ int main()
     cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
     int i;
     cin >> i; 
-    // co::Routine testr {[](){
-    //     while (1) {
-    //         co::yield_to(co::get_main_routine());
-    //     }
-    // }};
-    // t1 = chrono::high_resolution_clock::now();
-    // for (int i = 0; i < 10000; ++i) {
-    //     assert(co::yield_to(testr));
-    // }
-    // t2 = chrono::high_resolution_clock::now();
-    // cout << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
+    co::Routine testr {[](){
+        while (1) {
+            co::yield_to(co::get_main_routine());
+        }
+    }};
+    t1 = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10000; ++i) {
+        (co::yield_to(testr));
+    }
+    t2 = chrono::high_resolution_clock::now();
+    cout << "swtich performance: " << chrono::duration_cast<chrono::duration<double>>((t2 - t1)).count() << endl;
 
     function<void()> func1 = Func(1), func2 = Func(2);
     co::Routine cr {func1};

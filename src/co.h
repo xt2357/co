@@ -187,14 +187,14 @@ public:
 
     enum class State {Created, Prepared, Running, Suspend, Dead};
 
-    _Routine():_logic([](){}), _state(State::Created) {  std::cout << "construct:" << this << "empty logic" << std::endl; }
-    _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { std::cout << "construct:" << this << std::endl;}
+    _Routine():_logic([](){}), _state(State::Created) { /* std::cout << "construct:" << this << "empty logic" << std::endl; */}
+    _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { /*std::cout << "construct:" << this << std::endl;*/}
     _Routine(const Delegate &logic):_logic(logic), _state(State::Created) {}
     ~_Routine() {
         //std::cout << "destructor: " << this << std::endl;
-        std::cout << "detor:" << int(_state) << " " << this << std::endl;
+        // std::cout << "detor:" << int(_state) << " " << this << std::endl;
         if (_parent) {
-            std::cout << "move pointer from parent" << std::endl;
+            // std::cout << "move pointer from parent" << std::endl;
             assert(_parent->RemoveSubRoutine(*this));
         }
         for (auto r : _sub_routines) {
@@ -202,7 +202,7 @@ public:
             r->_parent = nullptr;
         }
         _sub_routines.clear();
-        std::cout << "sub routines cleared" << std::endl;
+        // std::cout << "sub routines cleared" << std::endl;
         RecursiveUnwindAndMarkDead(*this);
     }
 
@@ -231,7 +231,7 @@ public:
 private:
 
     static void RecursiveUnwindAndMarkDead(_Routine &r) {
-        std::cout << "RecursiveUnwindAndMarkDead" << std::endl;
+        // std::cout << "RecursiveUnwindAndMarkDead" << std::endl;
         if (r.GetState() == _Routine::State::Dead) {
             return;
         }
@@ -246,7 +246,7 @@ private:
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
         if (r.GetState() == _Routine::State::Suspend && r != *get_main_routine()) {
-            std::cout << "unwind" << std::endl;
+            // std::cout << "unwind" << std::endl;
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
@@ -284,18 +284,18 @@ private:
         other.SetState(State::Running);
         auto success = _context.SwapContext(other._context);
         if (!success) {
-            std::cout << "not success Jump" << std::endl;
+            // std::cout << "not success Jump" << std::endl;
             set_running_routine(*this);
             other.SetState(state_backup);
         }
         // unwind to break point
         if (_force_unwind) {
-            std::cout << "force unwind" << std::endl;
+            // std::cout << "force unwind" << std::endl;
             throw ForceUnwindingException(*this);
         }
         // throw to break point
         if (_rethrow_exception) {
-            std::cout << "rethrow!" << std::endl;
+            // std::cout << "rethrow!" << std::endl;
             _rethrow_exception = false;
             std::rethrow_exception(_exception);
         }

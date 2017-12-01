@@ -34,7 +34,7 @@ _Routine * get_main_routine() {
 void routine_entry() {
     auto& r = *get_running_routine();
     auto always_do = [&r]() {
-        std::cout << "finish _Routine work..........................................................................................." << std::endl;
+        // std::cout << "finish _Routine work..........................................................................................." << std::endl;
         r.SetState(_Routine::State::Dead);
         for (auto sub : r._sub_routines) {
             _Routine::RecursiveUnwindAndMarkDead(*sub);
@@ -55,7 +55,7 @@ void routine_entry() {
     catch (...) {
         // deliver the exception to upper _Routine
         always_do();
-        std::cout << "_Routine entry cached!" << std::endl;
+        // std::cout << "_Routine entry cached!" << std::endl;
         r._parent->_exception = std::current_exception();
         r._parent->_rethrow_exception = true;
         return;
