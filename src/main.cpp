@@ -80,6 +80,9 @@ struct Func {
 
 void test() {
     cout << (std::current_exception() == nullptr) << endl;
+    co::Routine r;
+    cout << co::yield_to(r) << endl;
+    cout << "test finish" << endl;
 }
 
 void yield_back(){
@@ -102,14 +105,14 @@ int main()
     //     co::yield_to(r1);
     //     cout << "f2: 2" << endl;
     // };
-    vector<co::Routine> routines;
-    for (int i = 0; i < 100; ++i) {
-        cout << "new routine created" << endl;
-        routines.push_back(co::Routine{yield_back});
-        co::yield_to(routines.back());
-    }
-    int i;
-    cin >> i; 
+    // vector<co::Routine> routines;
+    // for (int i = 0; i < 1000; ++i) {
+    //     cout << "new routine created" << endl;
+    //     routines.push_back(co::Routine{yield_back});
+    //     co::yield_to(routines.back());
+    // }
+    // int i;
+    // cin >> i; 
     function<void()> func1 = Func(1), func2 = Func(2);
     r1.SetBehavior(g_f1);
     r2.SetBehavior(g_f2);

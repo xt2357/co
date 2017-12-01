@@ -172,7 +172,7 @@ public:
 
     typedef std::function<void(void)> Delegate;
 
-    enum class State {Created, Running, Suspend, Dead};
+    enum class State {Created, Prepared, Running, Suspend, Dead};
 
     Routine():_logic([](){}), _state(State::Created) {  }
     Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { }
@@ -218,7 +218,7 @@ private:
         }
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
-        if (r.GetState() != Routine::State::Created && r != get_main_routine()) {
+        if (r.GetState() == Routine::State::Suspend && r != get_main_routine()) {
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
@@ -242,22 +242,23 @@ private:
             return false;
         }
         _parent = &parent;
-        _state = State::Suspend;
+        _state = State::Prepared;
         return true;
     }
 
     bool Jump(Routine &other) {
-        if (std::current_exception() || other.GetState() != State::Suspend) {
+        if (std::current_exception() || (other.GetState() != State::Suspend && other.GetState() != State::Prepared)) {
             return false;
         }
         _state = State::Suspend;
+        auto state_backup = other.GetState();
         set_running_routine(other);
         other.SetState(State::Running);
         auto success = _context.SwapContext(other._context);
         if (!success) {
             std::cout << "not success Jump" << std::endl;
             set_running_routine(*this);
-            other.SetState(State::Suspend);
+            other.SetState(state_backup);
         }
         // unwind to break point
         if (_force_unwind) {
