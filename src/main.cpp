@@ -109,6 +109,7 @@ int main()
     // };
     co::get_main_routine();
     vector<co::Routine> routines;
+    // construct: 8us
     auto t1 = chrono::high_resolution_clock::now();
     for (int i = 0; i < 1000; ++i) {
         // cout << "new routine created" << endl;
@@ -125,6 +126,7 @@ int main()
             co::yield_to(co::get_main_routine());
         }
     }};
+    // switch: 280ns
     t1 = chrono::high_resolution_clock::now();
     for (int i = 0; i < 10000; ++i) {
         (co::yield_to(testr));
