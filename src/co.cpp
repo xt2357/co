@@ -6,7 +6,7 @@ thread_local bool tls_initialized;
 thread_local _Routine tls_main_routine;
 thread_local _Routine * tls_cur_routine;
 
-_Routine *get_running_routine() {
+_Routine *get_running_routine() noexcept {
     if (!tls_initialized) {
         tls_main_routine.SetState(_Routine::State::Running);
         tls_cur_routine = &tls_main_routine;
@@ -16,22 +16,22 @@ _Routine *get_running_routine() {
     return tls_cur_routine;
 }
 
-bool in_main_routine() {
+bool in_main_routine() noexcept {
     return get_running_routine() == &tls_main_routine;
 }
 
-void set_running_routine(_Routine &_Routine) {
+void set_running_routine(_Routine &_Routine) noexcept {
     tls_cur_routine = &_Routine;
 }
 
-_Routine * get_main_routine() {
+_Routine * get_main_routine() noexcept {
     if (!tls_initialized) {
         get_running_routine();
     }
     return &tls_main_routine;
 }
 
-void routine_entry() {
+void routine_entry() noexcept {
     auto& r = *get_running_routine();
     auto always_do = [&r]() {
         // std::cout << "finish _Routine work..........................................................................................." << std::endl;

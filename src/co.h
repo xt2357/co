@@ -40,25 +40,11 @@ namespace co {
 struct Context {
 public:
 
-    Context() = default;
+    Context():_stack(new char[kStackSize]) {}
 
     // make context which start at start_point and start_point return to start_point_return_to
-    bool MakeContext(void (*start_point)(), Context &start_point_return_to) {
-        if (_stack || -1 == getcontext(&_ucontext)) {
-            return false;
-        }
-        _stack = static_cast<char*>(malloc(kStackSize));
-        if (!_stack) {
-            return false;
-        }
-        _ucontext.uc_stack.ss_sp = _stack;
-        _ucontext.uc_stack.ss_size = kStackSize;
-        _ucontext.uc_link = &start_point_return_to._ucontext;
-        makecontext(&_ucontext, start_point, 0);
-        return true;
-    }
-
-    bool ResetContext(void (*start_point)(), Context &start_point_return_to) {
+    bool MakeContext(void (*start_point)(), Context &start_point_return_to) noexcept {
+        assert(_stack);
         if (!_stack || -1 == getcontext(&_ucontext)) {
             return false;
         }
@@ -69,31 +55,31 @@ public:
         return true;
     }
 
-    bool SwapContext(const Context &other) {
+    bool SwapContext(const Context &other) noexcept {
         if (-1 == swapcontext(&_ucontext, &other._ucontext)) {
             return false;
         }
         return true;
     }
 
-    ~Context() {
+    ~Context() noexcept {
         if (_stack) {
-            free(_stack);
+            delete [] _stack;
         }
     }
 
 private:
 
     ucontext_t _ucontext;
-    char * _stack = nullptr;
-    size_t kStackSize = (1 << 23) - 8;// cache miss avoidance
+    char * _stack;
+    static const size_t kStackSize = (1 << 23) - 8;// cache miss avoidance
     
 };
 
 class _Routine;
-void set_running_routine(_Routine &_Routine);
-_Routine *get_running_routine();
-_Routine *get_main_routine();
+void set_running_routine(_Routine &_Routine) noexcept;
+_Routine *get_running_routine() noexcept;
+_Routine *get_main_routine() noexcept;
 
 
 // client code should never absorbing this exception otherwise it will cause incomplete stack unwinding
@@ -108,8 +94,8 @@ using Delegate = std::function<void(void)>;
 
 class _Routine {
 
-friend void routine_entry();
-friend _Routine *get_running_routine();
+friend void routine_entry() noexcept;
+friend _Routine *get_running_routine() noexcept;
 friend bool yield_to(_Routine &);
 
 public:
@@ -129,7 +115,7 @@ public:
     _Routine():_logic([](){}), _state(State::Created) { /* std::cout << "construct:" << this << "empty logic" << std::endl; */}
     _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { /*std::cout << "construct:" << this << std::endl;*/}
     _Routine(const Delegate &logic):_logic(logic), _state(State::Created) {}
-    ~_Routine() {
+    ~_Routine() noexcept {
         //std::cout << "destructor: " << this << std::endl;
         // std::cout << "detor:" << int(_state) << " " << this << std::endl;
         if (_parent) {
@@ -165,7 +151,7 @@ public:
         return true;
     }
 
-    State GetState() { return _state; }
+    State GetState() noexcept { return _state; }
 
 private:
 
@@ -194,7 +180,7 @@ private:
         r.SetState(State::Dead);
     }
 
-    void SetState(State state) { _state = state; }
+    void SetState(State state) noexcept { _state = state; }
 
     bool AttachSubRoutine(_Routine &sub_routine) {
         return _sub_routines.insert(&sub_routine).second;
@@ -204,7 +190,7 @@ private:
         return _sub_routines.erase(&sub_routine);
     }
 
-    bool PrepareContextForFirstResume(void (*start_point)(), _Routine &parent) {
+    bool PrepareContextForFirstResume(void (*start_point)(), _Routine &parent) noexcept {
         if (State::Created != _state || !parent.AttachSubRoutine(*this) || !_context.MakeContext(start_point, parent._context)) {
             return false;
         }
