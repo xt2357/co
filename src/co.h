@@ -247,7 +247,7 @@ class Routine
 {
 public:
     Routine(): _ptr(new _Routine{}) {}
-    Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) {}
+    Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) { std::cout << "move ctor" << std::endl;}
     Routine(const Delegate &logic): _ptr(new _Routine {logic}) {}
 
     _Routine& operator *() const { return *_ptr; }

@@ -92,6 +92,15 @@ void yield_back(){
     co::yield_to(co::get_main_routine());
 }
 
+void stack_overflow(int a) {
+    // cout << "stack_overflow" << endl;
+    stack_overflow(a);
+}
+
+void print(int a) {
+    std::cout << a << std::endl;
+}
+
 int main() 
 {
     // auto f1 = []() {
@@ -128,7 +137,7 @@ int main()
     }};
     // switch: 280ns
     t1 = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         (co::yield_to(testr));
     }
     t2 = chrono::high_resolution_clock::now();
@@ -170,5 +179,8 @@ int main()
     cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
     cout << "r1:" << int(r1->GetState()) << endl;
     cout << "r2:" << int(r2->GetState()) << endl;
+    // stack_overflow(2);
+    co::Routine so {std::bind(print, 1)};
+    co::yield_to(so);
     return 0;
 }
