@@ -58,6 +58,17 @@ public:
         return true;
     }
 
+    bool ResetContext(void (*start_point)(), Context &start_point_return_to) {
+        if (!_stack || -1 == getcontext(&_ucontext)) {
+            return false;
+        }
+        _ucontext.uc_stack.ss_sp = _stack;
+        _ucontext.uc_stack.ss_size = kStackSize;
+        _ucontext.uc_link = &start_point_return_to._ucontext;
+        makecontext(&_ucontext, start_point, 0);
+        return true;
+    }
+
     bool SwapContext(const Context &other) {
         if (-1 == swapcontext(&_ucontext, &other._ucontext)) {
             return false;
