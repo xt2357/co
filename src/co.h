@@ -42,22 +42,6 @@ public:
 
     Context() = default;
 
-    // Context(Context &&other) {
-    //     _stack = other._stack;
-    //     _ucontext = other._ucontext;
-    //     other._stack = nullptr;
-    // }
-
-    // Context& operator=(Context &&other) {
-    //     if (this != &other) {
-    //         free(_stack);
-    //         _stack = other._stack;
-    //         _ucontext = other._ucontext;
-    //         other._stack = nullptr;
-    //     }
-    //     return *this;
-    // }
-
     // make context which start at start_point and start_point return to start_point_return_to
     bool MakeContext(void (*start_point)(), Context &start_point_return_to) {
         if (_stack || -1 == getcontext(&_ucontext)) {
@@ -109,7 +93,7 @@ public:
     _Routine &_routine_to_unwind;
 };
 
-typedef std::function<void(void)> Delegate;
+using Delegate = std::function<void(void)>;
 
 class _Routine {
 
@@ -128,62 +112,6 @@ public:
     which will be invalid after moving them
     (moving will cause change of the address of _Routine objects)
     */
-
-    // _Routine(_Routine &&other) {
-    //     std::cout << "move ctor: move to " << this << std::endl;
-    //     _logic = std::move(other._logic);
-    //     _state = std::move(other._state);
-    //     _context = std::move(other._context);
-    //     _sub_routines = std::move(other._sub_routines);
-    //     _parent = std::move(other._parent);
-    //     _force_unwind = std::move(other._force_unwind);
-    //     _rethrow_exception = std::move(other._rethrow_exception);
-    //     _exception = std::move(other._exception);
-    //     other._logic = [](){};
-    //     other._state = State::Dead;
-    //     other._parent = nullptr;
-    //     other._force_unwind = false;
-    //     other._rethrow_exception = false;
-    //     if (_parent) {
-    //         assert(_parent->RemoveSubRoutine(other));
-    //         assert(_parent->AttachSubRoutine(*this));
-    //     }
-    //     for (auto &son : _sub_routines) {
-    //         son->_parent = this;
-    //     }
-    // }
-    // _Routine& operator=(_Routine &&other) {
-    //     std::cout << "move =" << std::endl;
-    //     if (this != &other) {
-    //         if (_parent) {
-    //             assert(_parent->RemoveSubRoutine(*this));
-    //         }
-    //         for (auto r : _sub_routines) {
-    //             RecursiveUnwindAndMarkDead(*r);
-    //             r->_parent = nullptr;
-    //         }
-    //         _sub_routines.clear();
-    //         RecursiveUnwindAndMarkDead(*this);
-    //         _logic = std::move(other._logic);
-    //         _state = std::move(other._state);
-    //         _context = std::move(other._context);
-    //         _sub_routines = std::move(other._sub_routines);
-    //         _parent = std::move(other._parent);
-    //         _force_unwind = std::move(other._force_unwind);
-    //         _rethrow_exception = std::move(other._rethrow_exception);
-    //         _exception = std::move(other._exception);
-    //         if (_parent) {
-    //             assert(_parent->RemoveSubRoutine(other));
-    //             assert(_parent->AttachSubRoutine(*this));
-    //         }
-    //         for (auto &son : _sub_routines) {
-    //             son->_parent = this;
-    //         }
-    //     }
-    //     return *this;
-    // }
-
-    
 
     enum class State {Created, Prepared, Running, Suspend, Dead};
 
@@ -335,39 +263,5 @@ private:
 bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
 bool yield_to(_Routine *other);
-
-
-// struct StartRoutineFailException: public std::exception {
-//     virtual const char * what() { return "start_routine fail"; }
-// };
-
-// template <typename Callable>
-// auto start_routine(Callable &&func) -> decltype(func()) {
-//     bool is_void = std::is_same<decltype(func()), void>::value;
-//     decltype(func()) *result = nullptr;
-//     if (!is_void) {
-//         result = new decltype(func());
-//     }
-//     _Routine r {[&]() {
-//         if (is_void) {
-//             func();
-//         }
-//         else {
-//             *result = func();
-//         }
-//     }};
-//     if (!yield_to(r)) {
-//         throw StartRoutineFailException();
-//     }
-//     if (!is_void) {
-//         decltype(func) res = *result;
-//         delete result;
-//         return res;
-//     }
-//     else {
-//         return;
-//     }
-// }
-
 
 }

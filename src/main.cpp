@@ -128,7 +128,7 @@ int main()
     }};
     // switch: 280ns
     t1 = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 10000; ++i) {
+    for (int i = 0; i < 1000000; ++i) {
         (co::yield_to(testr));
     }
     t2 = chrono::high_resolution_clock::now();
