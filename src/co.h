@@ -159,15 +159,15 @@ private:
             RecursiveUnwindAndMarkDead(*sub);
             sub->_parent = nullptr;
         }
-        r._sub_routines.clear();
+        // r._sub_routines.clear();
         // here means the thread is destructing
-        if (r.GetState() == State::Running && r == *get_main_routine()) {
+        if (r.GetState() == State::Running && &r == get_main_routine()) {
             r.SetState(State::Dead);
             return;
         }
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
-        if (r.GetState() == _Routine::State::Suspend && r != *get_main_routine()) {
+        if (r.GetState() == _Routine::State::Suspend && &r != get_main_routine()) {
             // std::cout << "unwind" << std::endl;
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
