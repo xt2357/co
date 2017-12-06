@@ -250,15 +250,34 @@ public:
     _Routine& operator *() const { return *_ptr; }
     _Routine* operator ->() const {return _ptr.get(); }
 
-    bool operator==(const Routine &other) { return **this == *other; }
-    bool operator!=(const Routine &other) { return **this != *other; }
+    bool operator==(const Routine &other) const { return _ptr == other._ptr; }
+    bool operator!=(const Routine &other) const { return _ptr != other._ptr; }
+    bool operator <(const Routine &other) const { return _ptr < other._ptr; }
+    bool operator<=(const Routine &other) const { return _ptr <= other._ptr; }
+    bool operator >(const Routine &other) const { return _ptr > other._ptr; }
+    bool operator>=(const Routine &other) const { return _ptr >= other._ptr; }
+
+    size_t hash() const { return std::hash<std::unique_ptr<co::_Routine>>()(_ptr); }
     
 private:
     std::unique_ptr<_Routine> _ptr;
 };
 
+
 bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
 bool yield_to(_Routine *other);
 
+}
+
+namespace std
+{
+    template <>
+    struct hash<co::Routine>
+    {
+        size_t operator()(const co::Routine& r) const
+        {
+            return r.hash();
+        }
+    };
 }

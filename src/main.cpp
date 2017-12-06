@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <set>
+#include <unordered_set>
 #include <chrono>
 
 #include "co.h"
@@ -120,7 +122,7 @@ int main()
     vector<co::Routine> routines;
     // construct: 8us
     auto t1 = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1; ++i) {
         // cout << "new routine created" << endl;
         routines.emplace_back(yield_back);
         routines.back()->GetState();
@@ -148,6 +150,9 @@ int main()
     co::Routine cr2 {func1};
     cout << "equal:" << (cr == cr) << endl;
     cout << "no equal: " << (cr != cr2) << endl;
+    cr = std::move(cr2);
+    set<co::Routine> set_r;
+    unordered_set<co::Routine> unset_r;
     r1->SetBehavior(g_f1);
     r2->SetBehavior(g_f2);
     cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
