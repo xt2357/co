@@ -122,11 +122,6 @@ public:
             // std::cout << "move pointer from parent" << std::endl;
             assert(_parent->RemoveSubRoutine(*this));
         }
-        for (auto r : _sub_routines) {
-            RecursiveUnwindAndMarkDead(*r);
-            r->_parent = nullptr;
-        }
-        _sub_routines.clear();
         // std::cout << "sub routines cleared" << std::endl;
         RecursiveUnwindAndMarkDead(*this);
     }
@@ -162,7 +157,9 @@ private:
         }
         for (auto sub : r._sub_routines) {
             RecursiveUnwindAndMarkDead(*sub);
+            sub->_parent = nullptr;
         }
+        r._sub_routines.clear();
         // here means the thread is destructing
         if (r.GetState() == State::Running && r == *get_main_routine()) {
             r.SetState(State::Dead);
@@ -244,7 +241,7 @@ class Routine
 {
 public:
     Routine(): _ptr(new _Routine{}) {}
-    Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) { std::cout << "move ctor" << std::endl;}
+    Routine(Delegate &&logic): _ptr(new _Routine {std::move(logic)}) { /*std::cout << "move ctor" << std::endl;*/}
     Routine(const Delegate &logic): _ptr(new _Routine {logic}) {}
 
     _Routine& operator *() const { return *_ptr; }
