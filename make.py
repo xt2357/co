@@ -10,13 +10,13 @@ def call(cmd, print_cmd=False):
     if subprocess.call(cmd, shell=True, stderr=sys.stderr):
         sys.exit(1)
 
-def compile(filename, to_path=None):
+def compile(filename, to_path=None, tags=[]):
     suffix = '.' + '.'.join(filename.split('.')[-1:])
     filename = '.'.join(filename.split('.')[:-1])
     if not to_path:
         to_path = os.path.dirname(filename)
     to_path = os.path.join(to_path, os.path.basename(filename))
-    cmd = 'gcc -Wall -g -c %s%s -o %s.o -lstdc++ -std=c++11'%(filename, suffix, to_path)
+    cmd = 'gcc -Wall -g -c %s%s -o %s.o -lstdc++ -std=c++11 %s'%(filename, suffix, to_path, ' '.join(tags))
     print('[COMPILE]-> %s: %s'%(filename + suffix, cmd))
     call(cmd)
     return to_path + '.o'
@@ -37,6 +37,13 @@ def lib_static(objects, output_filename):
     print('[LIB_STATIC]-> %s: %s'%(' '.join(objects), cmd))
     call(cmd)
 
+def lib_dynamic(objects, output_filename):
+    cmd = 'gcc -shared -o %s '%output_filename
+    for obj in objects:
+        cmd += obj + ' '
+    print('[LIB_DYNAMIC]-> %s: %s'%(' '.join(objects), cmd))
+    call(cmd)
+
 def make_debug():
     objs = []
     for root, dirs, files in os.walk('src'):
@@ -50,11 +57,19 @@ def make_static():
         for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
             objs.append(compile(os.path.join(root, f), 'objects'))
     lib_static(objs, 'libco.a')
+
+def make_dynamic():
+    objs = []
+    for root, dirs, files in os.walk('src'):
+        for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
+            objs.append(compile(os.path.join(root, f), 'objects', ['-fPIC']))
+    lib_dynamic(objs, 'libco.so')
     
 def make_clean():
     call('rm -f objects/*.o', print_cmd=True)
     call('rm -f *.out', print_cmd=True)
     call('rm -f *.a', print_cmd=True)
+    call('rm -f *.so', print_cmd=True)
 
 
 if __name__=='__main__':
@@ -65,4 +80,6 @@ if __name__=='__main__':
         make_clean()
     elif 'static' == sys.argv[1]:
         make_static()
+    elif 'dynamic' == sys.argv[1]:
+        make_dynamic()
 
