@@ -21,12 +21,12 @@ def compile(filename, to_path=None, tags=[]):
     call(cmd)
     return to_path + '.o'
 
-def link(objects, output_filename):
+def link(objects, output_filename, tags=[]):
     cmd = 'gcc '
     for obj in objects:
         cmd += obj + ' '
     cmd += '-o %s'%output_filename
-    cmd += ' -lstdc++ -std=c++11'
+    cmd += ' -lstdc++ -std=c++11 %s' % (' '.join(tags))
     print('[LINK]-> %s: %s'%(' '.join(objects), cmd))
     call(cmd)
 
@@ -49,27 +49,36 @@ def make_debug():
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp')]:
             objs.append(compile(os.path.join(root, f), 'objects'))
-    link(objs, 'a.out')
+    link(objs, 'a.out', ['-ldl'])
 
 def make_static():
     objs = []
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
             objs.append(compile(os.path.join(root, f), 'objects'))
-    lib_static(objs, 'libco.a')
+    lib_static(objs, 'lib/libco.a')
 
 def make_dynamic():
     objs = []
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
             objs.append(compile(os.path.join(root, f), 'objects', ['-fPIC']))
-    lib_dynamic(objs, 'libco.so')
+    lib_dynamic(objs, 'lib/libco.so')
     
 def make_clean():
     call('rm -f objects/*.o', print_cmd=True)
+    call('rm -f lib/*.so', print_cmd=True)
     call('rm -f *.out', print_cmd=True)
-    call('rm -f *.a', print_cmd=True)
-    call('rm -f *.so', print_cmd=True)
+    call('rm -f lib/*.a', print_cmd=True)
+
+def make_test():
+    make_dynamic()
+    objs = []
+    for root, dirs, files in os.walk('test'):
+        for f in [i for i in files if i.endswith('.cpp')]:
+            objs.append(compile(os.path.join(root, f), 'objects'))
+    link(objs, 'test.out', ['-L./lib', '-lco', '-ldl', '-Wl,-rpath=./lib'])
+    # gcc XXX.c -o xxx.out -L$HOME/.usr/lib -lXX -Wl,-rpath=/home/user/.usr/lib
 
 
 if __name__=='__main__':
@@ -82,4 +91,5 @@ if __name__=='__main__':
         make_static()
     elif 'dynamic' == sys.argv[1]:
         make_dynamic()
-
+    elif 'test' == sys.argv[1]:
+        make_test()    
