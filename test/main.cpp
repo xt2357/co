@@ -105,13 +105,13 @@ void print(int a) {
 
 int main() 
 {
-    co::Routine hook {[](){
+    co::Routine hook {[&](){
+        co::get_running_routine()->enable_syscall_hook(true);
         int x = 1;
         malloc(10);
         cin >> x;
         co::yield_to(co::get_main_routine());
     }};
-    hook->enable_syscall_hook(true);
     co::yield_to(hook);
     
     // auto f1 = []() {
