@@ -148,6 +148,9 @@ public:
 
     State GetState() noexcept { return _state; }
 
+    void enable_syscall_hook(bool enable) { _enable_syscall_hook = enable; }
+    bool enable_syscall_hook() { return _enable_syscall_hook; }
+
 private:
 
     static void RecursiveUnwindAndMarkDead(_Routine &r) {
@@ -231,7 +234,7 @@ private:
     Context _context;
     std::unordered_set<_Routine*> _sub_routines;
     _Routine *_parent = nullptr;
-    bool _force_unwind = false, _rethrow_exception = false;
+    bool _force_unwind = false, _rethrow_exception = false, _enable_syscall_hook = false;
     std::exception_ptr _exception;
 };
 

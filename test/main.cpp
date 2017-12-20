@@ -105,9 +105,15 @@ void print(int a) {
 
 int main() 
 {
-    int x = 1;
-    malloc(10);
-    cin >> x;
+    co::Routine hook {[](){
+        int x = 1;
+        malloc(10);
+        cin >> x;
+        co::yield_to(co::get_main_routine());
+    }};
+    hook->enable_syscall_hook(true);
+    co::yield_to(hook);
+    
     // auto f1 = []() {
     //     Obj obj {"obj1"};
     //     cout << "f1: 1" << endl;
