@@ -83,7 +83,7 @@ def make_test():
 
 if __name__=='__main__':
     if len(sys.argv) < 2:
-        make_debug()
+        make_dynamic()
         sys.exit(0)
     if 'clean' == sys.argv[1]:
         make_clean()
