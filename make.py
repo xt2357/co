@@ -5,32 +5,30 @@ import sys
 import os
 
 
-def enum(*sequential, **named):
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    return type('Enum', (), enums)
+class COLORS_CLASS:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
-COLORS = enum (
-    HEADER = '\033[95m',
-    OKBLUE = '\033[94m',
-    OKGREEN = '\033[92m',
-    WARNING = '\033[93m',
-    FAIL = '\033[91m',
-    ENDC = '\033[0m',
-    BOLD = '\033[1m',
-    UNDERLINE = '\033[4m',
-)
+    def __iter__(self):
+        for attr, value in COLORS_CLASS.__dict__.iteritems():
+            if (attr.startswith('__')):
+                continue
+            yield attr, value
+
+COLORS = COLORS_CLASS()
+
 
 def call(cmd, print_cmd=False):
     if print_cmd:
         print(cmd)
-    cmd = cmd.replace(COLORS.HEADER, '')
-    cmd = cmd.replace(COLORS.OKBLUE, '')
-    cmd = cmd.replace(COLORS.OKGREEN, '')
-    cmd = cmd.replace(COLORS.WARNING, '')
-    cmd = cmd.replace(COLORS.FAIL, '')
-    cmd = cmd.replace(COLORS.ENDC, '')
-    cmd = cmd.replace(COLORS.BOLD, '')
-    cmd = cmd.replace(COLORS.UNDERLINE, '')
+    for color, value in COLORS:
+        cmd = cmd.replace(value, '')
     if subprocess.call(cmd, shell=True, stderr=sys.stderr):
         sys.exit(1)
 
@@ -57,7 +55,7 @@ def link(objects, output_filename, tags=[]):
 def lib_static(objects, output_filename):
     cmd = 'ar rcs %s '%output_filename
     for obj in objects:
-        cmd += obj + ' '
+        cmd += COLORS.UNDERLINE + COLORS.BOLD + obj + COLORS.ENDC + ' '
     print(COLORS.OKGREEN + '[ARCHIVE]' + COLORS.ENDC + ' -> %s'%(cmd))
     call(cmd)
 
