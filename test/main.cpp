@@ -26,9 +26,9 @@ co::Routine r1, r2;
 
 void gaoshi() {
     Obj obj {"obj3"};
-    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     yield_to(co::get_main_routine());
 }
 
@@ -40,9 +40,9 @@ void throw_exception() {
 void g_f1() {
     throw 20;
     Obj obj {"obj1"};
-    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f1: 1" << endl;
     try {
         co::yield_to(r2);
@@ -53,9 +53,9 @@ void g_f1() {
         // assert(yield_to(co::get_main_routine()));
     }
     assert(yield_to(co::get_main_routine()));
-    cout << "reenter f1 main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    cout << "reenter f1 main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     gaoshi();
     cout << "f1: 2" << endl;
     co::yield_to(r2);
@@ -63,9 +63,9 @@ void g_f1() {
 
 void g_f2() {
     Obj obj {"obj2"};
-    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     cout << "f2: 1" << endl;
     throw 10;
     co::yield_to(r1);
@@ -106,7 +106,7 @@ void print(int a) {
 int main() 
 {
     co::Routine hook {[&](){
-        co::get_running_routine()->enable_syscall_hook(true);
+        co::get_running_routine().enable_syscall_hook(true);
         int x = 1;
         malloc(10);
         cin >> x;
@@ -134,7 +134,7 @@ int main()
     for (int i = 0; i < 10; ++i) {
         // cout << "new routine created" << endl;
         routines.emplace_back(yield_back);
-        // routines.back()->GetState();
+        // routines.back().GetState();
         co::yield_to(routines.back());
     }
     auto t2 = chrono::high_resolution_clock::now();
@@ -162,11 +162,11 @@ int main()
     cr = std::move(cr2);
     set<co::Routine> set_r;
     unordered_set<co::Routine> unset_r;
-    r1->SetBehavior(g_f1);
-    r2->SetBehavior(g_f2);
-    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    r1.SetBehavior(g_f1);
+    r2.SetBehavior(g_f2);
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     try {
         throw 20;
     }
@@ -190,9 +190,9 @@ int main()
     }
     cout << (std::current_exception() == nullptr) << endl;
     cout << "returned to main" << endl;
-    cout << "main:" << int(co::get_main_routine()->GetState()) << endl;
-    cout << "r1:" << int(r1->GetState()) << endl;
-    cout << "r2:" << int(r2->GetState()) << endl;
+    cout << "main:" << int(co::get_main_routine().GetState()) << endl;
+    cout << "r1:" << int(r1.GetState()) << endl;
+    cout << "r2:" << int(r2.GetState()) << endl;
     // stack_overflow(2);
     co::Routine so {std::bind(print, 1)};
     co::yield_to(so);

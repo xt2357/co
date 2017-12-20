@@ -78,8 +78,8 @@ private:
 
 class _Routine;
 void set_running_routine(_Routine &_Routine) noexcept;
-_Routine *get_running_routine() noexcept;
-_Routine *get_main_routine() noexcept;
+_Routine &get_running_routine() noexcept;
+_Routine &get_main_routine() noexcept;
 
 
 // client code should never absorbing this exception otherwise it will cause incomplete stack unwinding
@@ -91,11 +91,12 @@ public:
 };
 
 using Delegate = std::function<void(void)>;
+enum class State {Created, Prepared, Running, Suspend, Dead};
 
 class _Routine {
 
 friend void routine_entry() noexcept;
-friend _Routine *get_running_routine() noexcept;
+friend _Routine &get_running_routine() noexcept;
 friend bool yield_to(_Routine &);
 
 public:
@@ -109,8 +110,6 @@ public:
     which will be invalid after moving them
     (moving will cause change of the address of _Routine objects)
     */
-
-    enum class State {Created, Prepared, Running, Suspend, Dead};
 
     _Routine():_logic([](){}), _state(State::Created) { /* std::cout << "construct:" << this << "empty logic" << std::endl; */}
     _Routine(Delegate&& logic):_logic(std::move(logic)), _state(State::Created) { /*std::cout << "construct:" << this << std::endl;*/}
@@ -129,7 +128,6 @@ public:
     bool operator==(const _Routine &other) { return this == &other; }
     bool operator!=(const _Routine &other) { return this != &other; }
 
-    //rvalue reference? yes it is designed the only way to pass a functor in 
     bool SetBehavior(Delegate&& logic) {
         if (State::Created != _state) {
             return false;
@@ -155,7 +153,7 @@ private:
 
     static void RecursiveUnwindAndMarkDead(_Routine &r) {
         // std::cout << "RecursiveUnwindAndMarkDead" << std::endl;
-        if (r.GetState() == _Routine::State::Dead) {
+        if (r.GetState() == State::Dead) {
             return;
         }
         for (auto sub : r._sub_routines) {
@@ -164,18 +162,18 @@ private:
         }
         // r._sub_routines.clear();
         // here means the thread is destructing
-        if (r.GetState() == State::Running && &r == get_main_routine()) {
+        if (r.GetState() == State::Running && r == get_main_routine()) {
             r.SetState(State::Dead);
             return;
         }
         // we can not handle a running coroutine which is not main_routine
         assert(r.GetState() != State::Running);
-        if (r.GetState() == _Routine::State::Suspend && &r != get_main_routine()) {
+        if (r.GetState() == State::Suspend && r != get_main_routine()) {
             // std::cout << "unwind" << std::endl;
             // unwind the coroutine stack of r whose state is suspend
             r._force_unwind = true;
             // return here after unwinding
-            assert(get_running_routine()->_context.SwapContext(r._context));
+            assert(get_running_routine()._context.SwapContext(r._context));
         }
         r.SetState(State::Dead);
     }
@@ -238,7 +236,6 @@ private:
     std::exception_ptr _exception;
 };
 
-// using Routine = std::unique_ptr<_Routine>;
 
 class Routine
 {
@@ -248,7 +245,15 @@ public:
     Routine(const Delegate &logic): _ptr(new _Routine {logic}) {}
 
     _Routine& operator *() const { return *_ptr; }
-    _Routine* operator ->() const {return _ptr.get(); }
+
+    bool SetBehavior(Delegate&& logic) { return _ptr->SetBehavior(std::move(logic)); }
+
+    bool SetBehavior(const Delegate& logic) { return _ptr->SetBehavior(logic); }
+
+    State GetState() noexcept { return _ptr->GetState(); }
+
+    void enable_syscall_hook(bool enable) { _ptr->enable_syscall_hook(enable); }
+    bool enable_syscall_hook() { return _ptr->enable_syscall_hook(); }
 
     bool operator==(const Routine &other) const { return _ptr == other._ptr; }
     bool operator!=(const Routine &other) const { return _ptr != other._ptr; }
@@ -266,7 +271,6 @@ private:
 
 bool yield_to(_Routine &other);
 bool yield_to(Routine &other);
-bool yield_to(_Routine *other);
 
 }
 

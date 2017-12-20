@@ -14,7 +14,7 @@ void* malloc(size_t size)
     if (!my_malloc)
     my_malloc = (void* (*)(size_t))dlsym(RTLD_NEXT, "malloc");  /* returns the object reference for malloc */
     
-    if (!co::get_running_routine()->enable_syscall_hook()) {
+    if (!co::get_running_routine().enable_syscall_hook()) {
         return my_malloc(size);
     }
     
