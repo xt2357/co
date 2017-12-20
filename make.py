@@ -16,7 +16,7 @@ def compile(filename, to_path=None, tags=[]):
     if not to_path:
         to_path = os.path.dirname(filename)
     to_path = os.path.join(to_path, os.path.basename(filename))
-    cmd = 'gcc -Wall -g -c %s%s -o %s.o -lstdc++ -std=c++11 %s'%(filename, suffix, to_path, ' '.join(tags))
+    cmd = 'gcc %s%s -o %s.o %s'%(filename, suffix, to_path, ' '.join(tags))
     print('[COMPILE]-> %s: %s'%(filename + suffix, cmd))
     call(cmd)
     return to_path + '.o'
@@ -26,7 +26,7 @@ def link(objects, output_filename, tags=[]):
     for obj in objects:
         cmd += obj + ' '
     cmd += '-o %s'%output_filename
-    cmd += ' -lstdc++ -std=c++11 %s' % (' '.join(tags))
+    cmd += ' %s' % (' '.join(tags))
     print('[LINK]-> %s: %s'%(' '.join(objects), cmd))
     call(cmd)
 
@@ -48,21 +48,21 @@ def make_debug():
     objs = []
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp')]:
-            objs.append(compile(os.path.join(root, f), 'objects'))
-    link(objs, 'a.out', ['-ldl'])
+            objs.append(compile(os.path.join(root, f), 'objects', ['-Wall', '-g', '-c', '-lstdc++', '-std=c++11']))
+    link(objs, 'a.out', ['-ldl', '-lstdc++', '-std=c++11'])
 
 def make_static():
     objs = []
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
-            objs.append(compile(os.path.join(root, f), 'objects'))
+            objs.append(compile(os.path.join(root, f), 'objects', ['-Wall', '-g', '-c', '-lstdc++', '-std=c++11']))
     lib_static(objs, 'lib/libco.a')
 
 def make_dynamic():
     objs = []
     for root, dirs, files in os.walk('src'):
         for f in [i for i in files if i.endswith('.cpp') and i != 'main.cpp']:
-            objs.append(compile(os.path.join(root, f), 'objects', ['-fPIC']))
+            objs.append(compile(os.path.join(root, f), 'objects', ['-fPIC', '-Wall', '-g', '-c', '-lstdc++', '-std=c++11']))
     lib_dynamic(objs, 'lib/libco.so')
     
 def make_clean():
@@ -76,8 +76,8 @@ def make_test():
     objs = []
     for root, dirs, files in os.walk('test'):
         for f in [i for i in files if i.endswith('.cpp')]:
-            objs.append(compile(os.path.join(root, f), 'objects'))
-    link(objs, 'test.out', ['-L./lib', '-lco', '-ldl', '-Wl,-rpath=./lib'])
+            objs.append(compile(os.path.join(root, f), 'objects', ['-Wall', '-g', '-c', '-lstdc++', '-std=c++11']))
+    link(objs, 'test.out', ['-L./lib', '-lco', '-ldl', '-lstdc++', '-std=c++11', '-Wl,-rpath=./lib'])
     # gcc XXX.c -o xxx.out -L$HOME/.usr/lib -lXX -Wl,-rpath=/home/user/.usr/lib
 
 
