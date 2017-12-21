@@ -54,11 +54,9 @@ void routine_entry() noexcept {
     }
     catch (...) {
         // deliver the exception to upper _Routine
-        always_do();
         // std::cout << "_Routine entry cached!" << std::endl;
         r._parent->_exception = std::current_exception();
         r._parent->_rethrow_exception = true;
-        return;
     }
     always_do();
 }

@@ -89,6 +89,16 @@ void test() {
     cout << "test finish" << endl;
 }
 
+struct HandlerException : public std::exception {
+public:
+    HandlerException(std::string message) noexcept :
+        _message(std::move(message)) {}
+    const char * what() const noexcept override { return _message.c_str(); }
+
+protected:
+    std::string _message;
+};
+
 void yield_back(){
     // cout << "yield_to new routine" << endl;
     co::yield_to(co::get_main_routine());
@@ -103,8 +113,43 @@ void print(int a) {
     std::cout << a << std::endl;
 }
 
+void show_exception(exception_ptr ptr) {
+    if (ptr == nullptr) {
+        cout << "null exception" << endl;
+        return;
+    }
+    try {
+        rethrow_exception(ptr);
+    }
+    catch (exception &e) {
+        cout << e.what() << endl;
+    }
+}
+
 int main() 
 {
+    try {
+        throw HandlerException("main");
+    }
+    catch (const exception& e) {
+        show_exception(current_exception());
+        co::Routine r {[](){
+            try {
+                throw HandlerException("routine");
+            }
+            catch (...) {
+                show_exception(current_exception());
+
+                co::yield_to(co::get_main_routine());
+            }
+        }};
+        co::yield_to(r);
+        show_exception(current_exception());
+    }
+    show_exception(current_exception());
+    cout << uncaught_exception() << endl;
+
+
     co::Routine hook {[&](){
         co::get_running_routine().enable_syscall_hook(true);
         int x = 1;
@@ -172,6 +217,15 @@ int main()
     }
     catch(...) {
         cout << (bool)(current_exception()) << endl;
+        cout << "test ex" << endl;
+        try {
+            throw current_exception();
+        }
+        catch (...) {
+            
+        }
+        cout << (bool)(current_exception()) << endl;
+
     }
     cout << (bool)(current_exception()) << endl;
     try {
