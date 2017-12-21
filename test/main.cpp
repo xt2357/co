@@ -126,8 +126,24 @@ void show_exception(exception_ptr ptr) {
     }
 }
 
+void throw_something() {
+    try {
+        throw HandlerException("hahaha");
+    }
+    catch (...) {
+        return;
+    }
+}
+
 int main() 
 {
+    try {
+        throw_something();
+    }
+    catch (const std::exception &e) {
+        cout << e.what() << endl;
+    }
+    show_exception(current_exception());
     try {
         throw HandlerException("main");
     }
